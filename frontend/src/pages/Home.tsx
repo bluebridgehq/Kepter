@@ -1,10 +1,11 @@
-import type { ReactNode } from "react";
+import { useState, type FormEvent, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 
 import { GiftCard } from "../components/GiftCard.tsx";
 import { CheckIcon } from "../components/icons.tsx";
 import { Button, QrImage } from "../components/ui.tsx";
 import { DEMO_SHOP, shopUrl } from "../lib/config.ts";
+import { routeFromPaste } from "../lib/links.ts";
 
 const WHYS = [
   { t: "Money set aside", d: "Every card is backed by real dollars held in the contract, not by the shop." },
@@ -25,6 +26,55 @@ function StepCard({ n, text, children }: { n: number; text: string; children: Re
         <span className="text-lg font-semibold">{text}</span>
       </div>
     </div>
+  );
+}
+
+function FindShop() {
+  const navigate = useNavigate();
+  const [text, setText] = useState("");
+  const [error, setError] = useState(false);
+
+  const open = (e: FormEvent) => {
+    e.preventDefault();
+    const route = routeFromPaste(text);
+    if (route) navigate(route);
+    else setError(true);
+  };
+
+  return (
+    <form onSubmit={open} className="flex max-w-[460px] flex-col gap-2">
+      <label htmlFor="find-shop" className="text-[15px] font-semibold">
+        Have a shop link?
+      </label>
+      <div className="flex gap-2">
+        <input
+          id="find-shop"
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            setError(false);
+          }}
+          placeholder="Paste it here"
+          autoComplete="off"
+          spellCheck={false}
+          aria-invalid={error}
+          className={`min-h-[50px] min-w-0 flex-1 rounded-[14px] border-[1.5px] bg-surface px-3.5 text-base font-medium text-ink outline-none focus:border-brand ${error ? "border-bad" : "border-line"}`}
+        />
+        <Button
+          type="submit"
+          variant="secondary"
+          disabled={!text.trim()}
+          className="min-h-[50px] rounded-[14px] px-5 text-base"
+        >
+          Open
+        </Button>
+      </div>
+      <span className={`text-sm ${error ? "text-bad" : "text-ink-2"}`}>
+        {error
+          ? "That is not a Kepter link. Ask the shop for the link on their poster."
+          : "A shop link, a shop account, or a gift card link."}
+      </span>
+    </form>
   );
 }
 
@@ -54,6 +104,7 @@ export function Home() {
               See a demo shop
             </Button>
           </div>
+          <FindShop />
         </div>
         <div className="flex justify-center pt-2.5 pb-5">
           <div className="w-full max-w-[420px] -rotate-4">
