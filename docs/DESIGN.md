@@ -6,7 +6,7 @@ How the Kepter contract works, for anyone reading or changing the code. For what
 
 | Thing | What it is |
 |---|---|
-| Shop | A Stellar account that has opened a shop with `register_merchant`. It has a name and an unused balance rule |
+| Shop | A Stellar account that has opened a shop with `register_merchant`. It has a name, a category, a city, an optional contact (WhatsApp number or website) and an unused balance rule |
 | Card | Money held for one shop. It has a balance, an expiry date, the shop's rule at the time it was bought, and its own ed25519 public key |
 | Funder | Anyone who paid into a card: the buyer first, then friends who chipped in or a shop giving store credit. At most 20 per card |
 | Card key | A key pair made in the buyer's browser. Only the public key is stored. The secret lives in the card link after `#` |
@@ -43,6 +43,10 @@ The message is 84 bytes, built the same way in the contract (`src/redeem.rs`) an
 
 [`test-vectors/redeem.json`](../test-vectors/redeem.json) holds a fixed example. The contract tests check it, and the SDK tests will check the same file, so the two can never drift apart.
 
+## Using a card online
+
+Nothing in the redemption ties it to the counter. For an online order, the recipient's page signs the same message and shows it as text instead of a QR code, and the recipient sends it to the shop, usually on WhatsApp with the order. The shop pastes it into its Scan page and submits `redeem` as usual. Only the card's shop can submit it, because `redeem` needs the shop's approval, so a code seen by anyone else is useless to them.
+
 ## The unused balance rule
 
 Each shop chooses what happens to money left on a card when it expires, as `expiry_keep_bps` from 0 to 10,000 (0% to 100% to the shop). The website offers three values:
@@ -69,7 +73,9 @@ Every payment is sent with `try_transfer`. If an account cannot receive USDC (no
 
 The contract keeps a running total of everything it owes: open card balances plus amounts saved for someone to claim. `total_owed()` should always equal the contract's USDC balance, and the tests check this after every kind of action. The website compares the two to show a "fully backed" badge that anyone can verify on an explorer.
 
-## Opening a shop
+## Opening a shop and the shop list
+
+Each new shop is added to a list kept in the contract (`ShopCount` and `Shop(n)`), so the website can show every shop with no server or indexer. Closed shops stay in the list and the website hides them. The category is a number below 32. The names live in the SDK (`CATEGORIES`), so new categories can be added without a contract change. `update_shop` changes the name, category, city and contact.
 
 `register_merchant` calls the USDC contract's `trust` function (added in Protocol 26 by CAP-73), so opening a shop also creates the shop's USDC trustline. The shop owner needs about 0.5 XLM for the trustline reserve plus fees.
 
@@ -80,6 +86,8 @@ The contract keeps a running total of everything it owes: open card balances plu
 | `Usdc` | Instance | USDC contract address, set once in the constructor |
 | `NextCardId` | Instance | Next card ID, starting at 1 |
 | `TotalOwed` | Instance | Everything the contract owes |
+| `ShopCount` | Instance | How many shops have opened |
+| `Shop(n)` | Persistent | The n'th shop to open, for the shop list |
 | `Merchant(address)` | Persistent | `Merchant` |
 | `Card(id)` | Persistent | `Card` |
 | `MerchantCard(address, n)` | Persistent | The shop's n'th card ID, for listing |
@@ -99,12 +107,16 @@ Every write extends the entry's TTL to the network maximum (about 180 days today
 | Card life | 7 to 180 days |
 | QR code validity | At most 15 minutes ahead |
 | Shop name | 1 to 48 bytes |
+| City | 1 to 48 bytes |
+| Contact | 0 to 80 bytes |
+| Category | 0 to 31 |
 
 ## Functions
 
 | Function | Approved by | Purpose |
 |---|---|---|
-| `register_merchant(merchant, name, expiry_keep_bps)` | Shop | Open a shop and create its USDC trustline |
+| `register_merchant(merchant, name, expiry_keep_bps, category, city, contact)` | Shop | Open a shop, add it to the shop list and create its USDC trustline |
+| `update_shop(merchant, name, category, city, contact)` | Shop | Change the shop's details |
 | `set_expiry_rule(merchant, expiry_keep_bps)` | Shop | Change the rule for new cards |
 | `close_store(merchant)` | Shop | Close for good. Cards become settleable |
 | `buy(buyer, merchant, amount, card_key, expires_at)` | Buyer | Create a card and return its ID |
@@ -112,7 +124,7 @@ Every write extends the entry's TTL to the network maximum (about 180 days today
 | `redeem(card_id, amount, valid_until, signature)` | The card's shop | Spend from a card |
 | `settle(card_id)` | Anyone | Pay out an expired card or a closed shop's card |
 | `claim_owed(card_id, account)` | Anyone | Send a saved amount to its owner |
-| `get_merchant`, `get_card`, `get_merchant_card`, `get_funder`, `get_owed`, `total_owed`, `usdc` | Read only | |
+| `get_merchant`, `shop_count`, `get_shop`, `get_card`, `get_merchant_card`, `get_funder`, `get_owed`, `total_owed`, `usdc` | Read only | |
 
 ## Errors
 
@@ -138,9 +150,12 @@ Every write extends the entry's TTL to the network maximum (about 180 days today
 | 18 | `NothingOwed` | Nothing saved for that account |
 | 19 | `FunderNotFound` | No funder at that position |
 | 20 | `Overflow` | A calculation overflowed |
+| 21 | `InvalidCategory` | Category 32 or above |
+| 22 | `InvalidCity` | Empty or longer than 48 bytes |
+| 23 | `InvalidContact` | Longer than 80 bytes |
 
 A wrong signature fails inside `ed25519_verify` and aborts the transaction without a contract error code.
 
 ## Events
 
-`StoreOpened`, `StoreClosed`, `ExpiryRuleChanged`, `CardBought`, `CardToppedUp`, `CardRedeemed`, `CardSettled`, `AmountOwed`, `OwedClaimed`. Field names and topics are in [`src/events.rs`](../contracts/kepter/src/events.rs).
+`StoreOpened`, `StoreUpdated`, `StoreClosed`, `ExpiryRuleChanged`, `CardBought`, `CardToppedUp`, `CardRedeemed`, `CardSettled`, `AmountOwed`, `OwedClaimed`. Field names and topics are in [`src/events.rs`](../contracts/kepter/src/events.rs).

@@ -30,6 +30,19 @@ const backing = await kepter.getBacking();
 console.log(shop?.name, cards.length, backing.backed, formatUnits(backing.owed));
 ```
 
+### List shops
+
+```ts
+import { Kepter, categoryName } from "@kepter/sdk";
+
+const shops = await new Kepter().listShops();
+for (const { address, merchant } of shops) {
+  if (merchant.closed_at === undefined) console.log(merchant.name, categoryName(merchant.category), merchant.city);
+}
+```
+
+Shops open with `openShop(address, { name, category, city, contact }, rule)` and change their details with `updateShop`.
+
 ### Buy a card
 
 ```ts
@@ -69,12 +82,12 @@ const qrText = encodeRedeemQr(
 );
 ```
 
-At the shop, after scanning:
+At the shop, after scanning, or after pasting a customer's message for an online order:
 
 ```ts
-import { decodeRedeemQr } from "@kepter/sdk";
+import { decodeRedeemQr, findRedeemCode } from "@kepter/sdk";
 
-const tx = await kepter.redeem(decodeRedeemQr(scannedText));
+const tx = await kepter.redeem(decodeRedeemQr(findRedeemCode(text) ?? text));
 await tx.signAndSend();
 ```
 
