@@ -4,6 +4,7 @@ import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { GITHUB_URL } from "../lib/config.ts";
 import { useWallet } from "../lib/wallet-context.ts";
 import { LogoMark } from "./icons.tsx";
+import { ThemeButton } from "./ThemeButton.tsx";
 import { Skeleton } from "./ui.tsx";
 import { WalletButton } from "./WalletButton.tsx";
 
@@ -40,23 +41,24 @@ export function Layout() {
       <TestnetBanner />
       <header
         data-noprint
-        className="mx-auto flex w-full max-w-[1160px] items-center justify-between gap-3 px-5 py-3.5"
+        className="mx-auto flex w-full max-w-[1160px] items-center justify-between gap-2 px-5 py-3.5 sm:gap-3"
       >
         <Link to="/" className="flex items-center gap-[9px] text-ink no-underline hover:text-ink">
           <LogoMark />
           <span className="text-[22px] font-extrabold tracking-[-.02em]">Kepter</span>
         </Link>
-        {!onGiftCard && (
-          <div className="flex items-center gap-2.5 sm:gap-3.5">
+        <div className="flex items-center gap-1.5 sm:gap-3.5">
+          {!onGiftCard && (
             <button
               onClick={() => navigate(address ? "/shop" : "/open")}
-              className="cursor-pointer border-none bg-transparent px-1 py-2.5 text-[15px] font-semibold whitespace-nowrap text-ink"
+              className="cursor-pointer border-none bg-transparent px-0.5 py-2.5 text-[15px] font-semibold whitespace-nowrap text-ink max-[359px]:hidden sm:px-1"
             >
               For shops
             </button>
-            <WalletButton />
-          </div>
-        )}
+          )}
+          {!onGiftCard && <WalletButton />}
+          <ThemeButton />
+        </div>
       </header>
       <main className="w-full flex-1">
         <Suspense fallback={<PageLoading />}>

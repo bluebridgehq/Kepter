@@ -25,9 +25,9 @@ export function WalletButton() {
         onClick={async () => {
           if (await connect()) toast("Wallet connected");
         }}
-        className="min-h-11 cursor-pointer rounded-full border-none bg-brand px-[18px] text-[15px] font-bold whitespace-nowrap text-brand-ink"
+        className="min-h-11 cursor-pointer rounded-full border-none bg-brand px-4 text-[15px] font-bold whitespace-nowrap text-brand-ink sm:px-[18px]"
       >
-        Connect wallet
+        Connect<span className="hidden sm:inline"> wallet</span>
       </button>
     );
   }
@@ -37,10 +37,11 @@ export function WalletButton() {
       <button
         onClick={() => setOpen(!open)}
         aria-expanded={open}
-        className="tabular flex min-h-11 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-line bg-surface px-3.5 text-[15px] font-semibold whitespace-nowrap text-ink"
+        className="tabular flex min-h-11 cursor-pointer items-center gap-2 rounded-full border-[1.5px] border-line bg-surface px-3 text-[15px] font-semibold whitespace-nowrap text-ink sm:px-3.5"
       >
         <span className="size-2 rounded-full bg-ok" />
-        {shortAddress(address)}
+        <span className="sm:hidden">{address.slice(0, 4)}</span>
+        <span className="hidden sm:inline">{shortAddress(address)}</span>
       </button>
       {open && (
         <div className="absolute top-[52px] right-0 z-30 flex min-w-[220px] flex-col rounded-[14px] border border-line bg-surface p-1.5 shadow-card">
