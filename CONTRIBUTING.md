@@ -15,7 +15,7 @@ cd kepter/contracts
 cargo test
 ```
 
-For the SDK you also need Node 24 or newer and pnpm. From the repository root run `pnpm install`, then `pnpm --filter @kepter/sdk test`.
+For the SDK and the website you also need Node 24 or newer and pnpm. From the repository root run `pnpm install`, `pnpm --filter @kepter/sdk build`, then `pnpm dev` to start the website.
 
 Read [docs/DESIGN.md](docs/DESIGN.md) before changing contract logic. It explains the card lifecycle, the redemption message, settlement and the running totals.
 
@@ -46,6 +46,8 @@ stellar contract build
 ```
 
 For SDK changes, run `pnpm typecheck`, `pnpm test` and `pnpm build` inside `sdk/`. If you change the contract's interface, rebuild it and run `pnpm generate` in `sdk/` so the generated client matches.
+
+For website changes, run `pnpm --filter @kepter/frontend typecheck`, `lint` and `build`. Use the design tokens in `frontend/src/index.css` instead of new colours, and keep the recipient's pages free of crypto words.
 
 CI runs the same checks. Link the issue in the description with `Closes #<number>`.
 

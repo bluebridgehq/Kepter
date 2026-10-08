@@ -4,7 +4,7 @@
 
 Kepter lets small shops sell gift cards and store credit that are backed by real money. When someone buys a card, the USDC is held by this Soroban contract on Stellar, not by the shop. The person who gets the card opens a link on their phone and shows a QR code at the counter. The shop scans it and is paid from the card on the spot.
 
-This repository holds the whole project: the Soroban contract (live on testnet), the TypeScript SDK, and soon the website.
+This repository holds the whole project: the Soroban contract (live on testnet), the TypeScript SDK and the website.
 
 ## How it works
 
@@ -25,7 +25,7 @@ The full design is in [docs/DESIGN.md](docs/DESIGN.md), and the product overview
 | Network | Stellar testnet (Protocol 29) |
 | Contract | [`CC54W5Y23QKGDCJGXI5LTSY5QO5JWLSYNUVWQXWV2AA2IFUDJYPHART7`](https://stellar.expert/explorer/testnet/contract/CC54W5Y23QKGDCJGXI5LTSY5QO5JWLSYNUVWQXWV2AA2IFUDJYPHART7) |
 | Asset | Circle's testnet USDC (`CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA`) |
-| Tests | 40 contract tests and 24 SDK tests passing |
+| Tests | 40 contract tests and 25 SDK tests passing |
 | Size | About 22 KB of WASM |
 
 The full flow (open a shop, buy, chip in, redeem with a signed QR code, close, settle, and claim a share that could not be paid) has been run on testnet. Details of the current deployment are in [`deployments/testnet.json`](deployments/testnet.json).
@@ -43,14 +43,18 @@ cargo test
 stellar contract build
 ```
 
-### SDK
+### SDK and website
 
 You need Node 24 or newer and pnpm.
 
 ```
 pnpm install
+pnpm --filter @kepter/sdk build
 pnpm --filter @kepter/sdk test
+pnpm dev
 ```
+
+`pnpm dev` starts the website at http://localhost:5173.
 
 ### Deploy your own copy to testnet
 
@@ -83,12 +87,12 @@ contracts/            Rust workspace for the Soroban contract
     test/             tests, grouped by feature
   scripts/            deployment
 sdk/                  @kepter/sdk, the TypeScript SDK (see sdk/README.md)
+frontend/             the website (see frontend/README.md)
 test-vectors/         fixtures shared by the contract and the SDK
 deployments/          addresses of deployed contracts, used by the SDK and website
 docs/                 design and overview
 ```
 
-The website (`frontend/`) will be added next.
 
 ## Contributing
 
