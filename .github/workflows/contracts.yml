@@ -12,6 +12,7 @@ on:
       - "contracts/**"
       - "test-vectors/**"
       - ".github/workflows/contracts.yml"
+  workflow_dispatch:
 
 defaults:
   run:
