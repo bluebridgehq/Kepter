@@ -1,0 +1,19 @@
+[package]
+name = "kepter"
+description = "Gift cards for small shops, backed by USDC held in a Soroban contract"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+publish = false
+
+[lib]
+crate-type = ["lib", "cdylib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { workspace = true }
+
+[dev-dependencies]
+soroban-sdk = { workspace = true, features = ["testutils"] }
+ed25519-dalek = "2"
