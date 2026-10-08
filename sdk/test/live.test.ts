@@ -14,7 +14,18 @@ test("reads the demo shop from testnet", { skip: !live }, async () => {
   const shop = await kepter.getMerchant(DEMO_SHOP);
   assert.ok(shop, "demo shop should exist");
   assert.equal(shop.name, "Tola's Kitchen");
+  assert.equal(shop.category, 1);
+  assert.equal(shop.city, "Yaba, Lagos");
   assert.equal(shop.closed_at, undefined);
+});
+
+test("lists every shop with its details", { skip: !live }, async () => {
+  const kepter = new Kepter();
+  const shops = await kepter.listShops();
+  const demo = shops.find((s) => s.address === DEMO_SHOP);
+  assert.ok(demo, "the demo shop should be listed");
+  assert.equal(demo.merchant.name, "Tola's Kitchen");
+  assert.equal(new Set(shops.map((s) => s.address)).size, shops.length);
 });
 
 test("a missing shop reads as undefined", { skip: !live }, async () => {

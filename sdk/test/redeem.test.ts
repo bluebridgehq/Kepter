@@ -6,6 +6,7 @@ import { Keypair } from "@stellar/stellar-sdk";
 import {
   decodeRedeemQr,
   encodeRedeemQr,
+  findRedeemCode,
   MESSAGE_LENGTH,
   redeemMessage,
   signRedeem,
@@ -71,4 +72,11 @@ test("a scanner can verify a QR before charging", () => {
   assert.equal(verifyRedeem(publicKey, { ...params, amount: params.amount + 1n }, qr.signature), false);
   const other = Keypair.random().rawPublicKey();
   assert.equal(verifyRedeem(other, params, qr.signature), false);
+});
+
+test("a payment code is found inside a pasted chat message", () => {
+  const code = encodeRedeemQr(signRedeem(secret, params));
+  assert.equal(findRedeemCode(`Hi, this is for my order.\n${code}\nThanks`), code);
+  assert.equal(findRedeemCode(code), code);
+  assert.equal(findRedeemCode("no code here"), undefined);
 });

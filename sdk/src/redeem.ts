@@ -82,6 +82,11 @@ export function encodeRedeemQr(qr: RedeemQr): string {
   return `${QR_PREFIX}${qr.cardId}:${qr.amount}:${qr.validUntil}:${toBase64Url(qr.signature)}`;
 }
 
+/** Finds a payment code inside pasted text, such as a whole chat message. */
+export function findRedeemCode(text: string): string | undefined {
+  return /kepter:r:\d+:\d+:\d+:[A-Za-z0-9_-]+/.exec(text)?.[0];
+}
+
 export function decodeRedeemQr(text: string): RedeemQr {
   if (!text.startsWith(QR_PREFIX)) {
     throw new Error("This is not a Kepter QR code");

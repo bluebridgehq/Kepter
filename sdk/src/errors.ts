@@ -20,6 +20,9 @@ export const ERROR_MESSAGES: Record<number, string> = {
   18: "Nothing is owed to this account on this card.",
   19: "That funder does not exist.",
   20: "A calculation overflowed.",
+  21: "Pick a category from the list.",
+  22: "Add the shop's city or area, up to 48 characters.",
+  23: "The contact can be at most 80 characters.",
 };
 
 /** Finds a Kepter contract error code in an error thrown by the Stellar SDK. */

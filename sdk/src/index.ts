@@ -8,6 +8,8 @@ export type {
   KepterOptions,
   Merchant,
   Settlement,
+  ShopDetails,
+  ShopEntry,
 } from "./client.ts";
 export { Client as ContractClient } from "./generated/contract.ts";
 
@@ -22,6 +24,7 @@ export {
   MESSAGE_LENGTH,
   decodeRedeemQr,
   encodeRedeemQr,
+  findRedeemCode,
   redeemMessage,
   signRedeem,
   verifyRedeem,
@@ -40,6 +43,9 @@ export type { CardKey, CardLink } from "./cardLink.ts";
 
 export { BPS_DENOMINATOR, RULES, describeRule, previewSettlement } from "./rules.ts";
 export type { RuleDescription, SettlementInput, SettlementPreview } from "./rules.ts";
+
+export { CATEGORIES, categoryName } from "./categories.ts";
+export type { Category } from "./categories.ts";
 
 export { ERROR_MESSAGES, contractErrorCode, explainError } from "./errors.ts";
 

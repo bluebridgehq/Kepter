@@ -22,6 +22,21 @@ export interface KepterOptions {
   signTransaction?: ClientOptions["signTransaction"];
 }
 
+/** Shop details people see when browsing and buying. */
+export interface ShopDetails {
+  name: string;
+  /** An id from CATEGORIES. */
+  category: number;
+  city: string;
+  /** A WhatsApp number or a website. May be empty. */
+  contact: string;
+}
+
+export interface ShopEntry {
+  address: string;
+  merchant: Merchant;
+}
+
 export interface CardEntry {
   id: bigint;
   card: Card;
@@ -74,6 +89,20 @@ export class Kepter {
   async getMerchant(address: string): Promise<Merchant | undefined> {
     const [merchant] = await this.read([dataKey("Merchant", addressVal(address))]);
     return merchant ? normalizeMerchant(merchant as Merchant) : undefined;
+  }
+
+  /** Every shop ever opened, closed ones included, in opening order. */
+  async listShops(): Promise<ShopEntry[]> {
+    const count = (await this.contract.shop_count()).result;
+    const indexes = Array.from({ length: count }, (_, i) => i);
+    const addresses = (await this.read(indexes.map((i) => dataKey("Shop", u32Val(i))))).filter(
+      (a): a is string => typeof a === "string",
+    );
+    const merchants = await this.read(addresses.map((a) => dataKey("Merchant", addressVal(a))));
+    return addresses.flatMap((address, i) => {
+      const merchant = merchants[i] as Merchant | undefined;
+      return merchant ? [{ address, merchant }] : [];
+    });
   }
 
   async getCard(cardId: bigint): Promise<Card | undefined> {
@@ -164,11 +193,15 @@ export class Kepter {
 
   // Writes. Each returns a transaction to sign and send with `tx.signAndSend()`.
 
-  openShop(merchant: string, name: string, expiryKeepBps: number) {
+  openShop(merchant: string, details: ShopDetails, expiryKeepBps: number) {
     return this.contract.register_merchant(
-      { merchant, name, expiry_keep_bps: expiryKeepBps },
+      { merchant, ...details, expiry_keep_bps: expiryKeepBps },
       WRITE,
     );
+  }
+
+  updateShop(merchant: string, details: ShopDetails) {
+    return this.contract.update_shop({ merchant, ...details }, WRITE);
   }
 
   setExpiryRule(merchant: string, expiryKeepBps: number) {
@@ -234,10 +267,13 @@ export class Kepter {
         }),
       ),
     );
-    const found = new Map<string, unknown>();
+    const batches: xdr.LedgerKey[][] = [];
     for (let i = 0; i < ledgerKeys.length; i += BATCH_SIZE) {
-      const batch = ledgerKeys.slice(i, i + BATCH_SIZE);
-      const { entries } = await this.server.getLedgerEntries(...batch);
+      batches.push(ledgerKeys.slice(i, i + BATCH_SIZE));
+    }
+    const results = await Promise.all(batches.map((batch) => this.server.getLedgerEntries(...batch)));
+    const found = new Map<string, unknown>();
+    for (const { entries } of results) {
       for (const entry of entries) {
         if (entry.val.type !== "contractData") continue;
         found.set(entry.key.toXDR("base64"), scValToNative(entry.val.contractData.val));

@@ -54,7 +54,16 @@ expiry_keep_bps: u32;
 
 export interface Merchant {
   card_count: u32;
+  /**
+ * Index into the category list kept by the website. Below `MAX_CATEGORIES`.
+ */
+category: u32;
+  city: string;
   closed_at: Option<u64>;
+  /**
+ * How customers reach the shop to order online: a WhatsApp number or a website. May be empty.
+ */
+contact: string;
   created_at: u64;
   /**
  * Shop's share of an unused balance at expiry, in basis points.
@@ -97,8 +106,12 @@ export const Errors = {
   17: {message:"NothingToSettle"},
   18: {message:"NothingOwed"},
   19: {message:"FunderNotFound"},
-  20: {message:"Overflow"}
+  20: {message:"Overflow"},
+  21: {message:"InvalidCategory"},
+  22: {message:"InvalidCity"},
+  23: {message:"InvalidContact"}
 }
+
 
 
 
@@ -151,6 +164,12 @@ export interface Client {
   get_owed: ({card_id, account}: {card_id: u64, account: string}, options?: MethodOptions) => Promise<AssembledTransaction<i128>>
 
   /**
+   * Construct and simulate a get_shop transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   * The shop at a position in the list, starting from 0 in opening order.
+   */
+  get_shop: ({index}: {index: u32}, options?: MethodOptions) => Promise<AssembledTransaction<Result<string>>>
+
+  /**
    * Construct and simulate a claim_owed transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    * Sends an amount that could not be paid during settlement.
    */
@@ -160,6 +179,12 @@ export interface Client {
    * Construct and simulate a get_funder transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
    */
   get_funder: ({card_id, index}: {card_id: u64, index: u32}, options?: MethodOptions) => Promise<AssembledTransaction<Result<FunderInfo>>>
+
+  /**
+   * Construct and simulate a shop_count transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   * How many shops have ever opened, closed ones included.
+   */
+  shop_count: (options?: MethodOptions) => Promise<AssembledTransaction<u32>>
 
   /**
    * Construct and simulate a total_owed transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
@@ -173,6 +198,12 @@ export interface Client {
    * Closes a shop for good. Its cards can then be settled straight away.
    */
   close_store: ({merchant}: {merchant: string}, options?: MethodOptions) => Promise<AssembledTransaction<Result<void>>>
+
+  /**
+   * Construct and simulate a update_shop transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
+   * Changes the shop's name, category, city and contact.
+   */
+  update_shop: ({merchant, name, category, city, contact}: {merchant: string, name: string, category: u32, city: string, contact: string}, options?: MethodOptions) => Promise<AssembledTransaction<Result<void>>>
 
   /**
    * Construct and simulate a get_merchant transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
@@ -192,9 +223,9 @@ export interface Client {
 
   /**
    * Construct and simulate a register_merchant transaction. Returns an `AssembledTransaction` object which will have a `result` field containing the result of the simulation. If this transaction changes contract state, you will need to call `signAndSend()` on the returned object.
-   * Opens a shop and creates its USDC trustline so it can be paid.
+   * Opens a shop, adds it to the shop list and creates its USDC trustline so it can be paid.
    */
-  register_merchant: ({merchant, name, expiry_keep_bps}: {merchant: string, name: string, expiry_keep_bps: u32}, options?: MethodOptions) => Promise<AssembledTransaction<Result<void>>>
+  register_merchant: ({merchant, name, expiry_keep_bps, category, city, contact}: {merchant: string, name: string, expiry_keep_bps: u32, category: u32, city: string, contact: string}, options?: MethodOptions) => Promise<AssembledTransaction<Result<void>>>
 
 }
 export class Client extends ContractClient {
@@ -223,28 +254,32 @@ export class Client extends ContractClient {
         "AAAAAAAAAElBZGRzIG1vbmV5IHRvIGEgY2FyZDogZnJpZW5kcyBjaGlwcGluZyBpbiwgb3IgYSBzaG9wIGdpdmluZyBzdG9yZSBjcmVkaXQuAAAAAAAABnRvcF91cAAAAAAAAwAAAAAAAAAGZnVuZGVyAAAAAAATAAAAAAAAAAdjYXJkX2lkAAAAAAYAAAAAAAAABmFtb3VudAAAAAAACwAAAAEAAAPpAAAAAgAAAAM=",
         "AAAAAAAAAAAAAAAIZ2V0X2NhcmQAAAABAAAAAAAAAAdjYXJkX2lkAAAAAAYAAAABAAAD6QAAB9AAAAAEQ2FyZAAAAAM=",
         "AAAAAAAAAAAAAAAIZ2V0X293ZWQAAAACAAAAAAAAAAdjYXJkX2lkAAAAAAYAAAAAAAAAB2FjY291bnQAAAAAEwAAAAEAAAAL",
+        "AAAAAAAAAEVUaGUgc2hvcCBhdCBhIHBvc2l0aW9uIGluIHRoZSBsaXN0LCBzdGFydGluZyBmcm9tIDAgaW4gb3BlbmluZyBvcmRlci4AAAAAAAAIZ2V0X3Nob3AAAAABAAAAAAAAAAVpbmRleAAAAAAAAAQAAAABAAAD6QAAABMAAAAD",
         "AAAAAAAAADlTZW5kcyBhbiBhbW91bnQgdGhhdCBjb3VsZCBub3QgYmUgcGFpZCBkdXJpbmcgc2V0dGxlbWVudC4AAAAAAAAKY2xhaW1fb3dlZAAAAAAAAgAAAAAAAAAHY2FyZF9pZAAAAAAGAAAAAAAAAAdhY2NvdW50AAAAABMAAAABAAAD6QAAAAsAAAAD",
         "AAAAAAAAAAAAAAAKZ2V0X2Z1bmRlcgAAAAAAAgAAAAAAAAAHY2FyZF9pZAAAAAAGAAAAAAAAAAVpbmRleAAAAAAAAAQAAAABAAAD6QAAB9AAAAAKRnVuZGVySW5mbwAAAAAAAw==",
+        "AAAAAAAAADZIb3cgbWFueSBzaG9wcyBoYXZlIGV2ZXIgb3BlbmVkLCBjbG9zZWQgb25lcyBpbmNsdWRlZC4AAAAAAApzaG9wX2NvdW50AAAAAAAAAAAAAQAAAAQ=",
         "AAAAAAAAAHxFdmVyeXRoaW5nIHRoZSBjb250cmFjdCBvd2VzOiBvcGVuIGNhcmQgYmFsYW5jZXMgcGx1cyB1bmNsYWltZWQgYW1vdW50cy4KSXQgc2hvdWxkIGFsd2F5cyBlcXVhbCB0aGUgY29udHJhY3QncyBVU0RDIGJhbGFuY2UuAAAACnRvdGFsX293ZWQAAAAAAAAAAAABAAAACw==",
         "AAAAAAAAAERDbG9zZXMgYSBzaG9wIGZvciBnb29kLiBJdHMgY2FyZHMgY2FuIHRoZW4gYmUgc2V0dGxlZCBzdHJhaWdodCBhd2F5LgAAAAtjbG9zZV9zdG9yZQAAAAABAAAAAAAAAAhtZXJjaGFudAAAABMAAAABAAAD6QAAAAIAAAAD",
+        "AAAAAAAAADRDaGFuZ2VzIHRoZSBzaG9wJ3MgbmFtZSwgY2F0ZWdvcnksIGNpdHkgYW5kIGNvbnRhY3QuAAAAC3VwZGF0ZV9zaG9wAAAAAAUAAAAAAAAACG1lcmNoYW50AAAAEwAAAAAAAAAEbmFtZQAAABAAAAAAAAAACGNhdGVnb3J5AAAABAAAAAAAAAAEY2l0eQAAABAAAAAAAAAAB2NvbnRhY3QAAAAAEAAAAAEAAAPpAAAAAgAAAAM=",
         "AAAAAAAAAAAAAAAMZ2V0X21lcmNoYW50AAAAAQAAAAAAAAAIbWVyY2hhbnQAAAATAAAAAQAAA+kAAAfQAAAACE1lcmNoYW50AAAAAw==",
         "AAAAAAAAAAAAAAANX19jb25zdHJ1Y3RvcgAAAAAAAAEAAAAAAAAABHVzZGMAAAATAAAAAA==",
         "AAAAAAAAAD1DaGFuZ2VzIHRoZSB1bnVzZWQgYmFsYW5jZSBydWxlIGZvciBjYXJkcyBib3VnaHQgZnJvbSBub3cgb24uAAAAAAAAD3NldF9leHBpcnlfcnVsZQAAAAACAAAAAAAAAAhtZXJjaGFudAAAABMAAAAAAAAAD2V4cGlyeV9rZWVwX2JwcwAAAAAEAAAAAQAAA+kAAAACAAAAAw==",
         "AAAAAAAAAAAAAAARZ2V0X21lcmNoYW50X2NhcmQAAAAAAAACAAAAAAAAAAhtZXJjaGFudAAAABMAAAAAAAAABWluZGV4AAAAAAAABAAAAAEAAAPpAAAABgAAAAM=",
-        "AAAAAAAAAD5PcGVucyBhIHNob3AgYW5kIGNyZWF0ZXMgaXRzIFVTREMgdHJ1c3RsaW5lIHNvIGl0IGNhbiBiZSBwYWlkLgAAAAAAEXJlZ2lzdGVyX21lcmNoYW50AAAAAAAAAwAAAAAAAAAIbWVyY2hhbnQAAAATAAAAAAAAAARuYW1lAAAAEAAAAAAAAAAPZXhwaXJ5X2tlZXBfYnBzAAAAAAQAAAABAAAD6QAAAAIAAAAD",
+        "AAAAAAAAAFhPcGVucyBhIHNob3AsIGFkZHMgaXQgdG8gdGhlIHNob3AgbGlzdCBhbmQgY3JlYXRlcyBpdHMgVVNEQyB0cnVzdGxpbmUgc28gaXQgY2FuIGJlIHBhaWQuAAAAEXJlZ2lzdGVyX21lcmNoYW50AAAAAAAABgAAAAAAAAAIbWVyY2hhbnQAAAATAAAAAAAAAARuYW1lAAAAEAAAAAAAAAAPZXhwaXJ5X2tlZXBfYnBzAAAAAAQAAAAAAAAACGNhdGVnb3J5AAAABAAAAAAAAAAEY2l0eQAAABAAAAAAAAAAB2NvbnRhY3QAAAAAEAAAAAEAAAPpAAAAAgAAAAM=",
         "AAAAAQAAAAAAAAAAAAAABENhcmQAAAAKAAAAAAAAAAdiYWxhbmNlAAAAAAsAAAAAAAAACmNyZWF0ZWRfYXQAAAAAAAYAAAAAAAAACmV4cGlyZXNfYXQAAAAAAAYAAAAwVGhlIHNob3AncyBydWxlIGF0IHRoZSB0aW1lIHRoZSBjYXJkIHdhcyBib3VnaHQuAAAAD2V4cGlyeV9rZWVwX2JwcwAAAAAEAAAAAAAAAAxmdW5kZXJfY291bnQAAAAEAAAAAAAAAANrZXkAAAAD7gAAACAAAAAAAAAACG1lcmNoYW50AAAAEwAAAAAAAAAFbm9uY2UAAAAAAAAEAAAAAAAAAAdzZXR0bGVkAAAAAAEAAAAAAAAACnRvdGFsX3BhaWQAAAAAAAs=",
-        "AAAAAQAAAAAAAAAAAAAACE1lcmNoYW50AAAABwAAAAAAAAAKY2FyZF9jb3VudAAAAAAABAAAAAAAAAAJY2xvc2VkX2F0AAAAAAAD6AAAAAYAAAAAAAAACmNyZWF0ZWRfYXQAAAAAAAYAAAA9U2hvcCdzIHNoYXJlIG9mIGFuIHVudXNlZCBiYWxhbmNlIGF0IGV4cGlyeSwgaW4gYmFzaXMgcG9pbnRzLgAAAAAAAA9leHBpcnlfa2VlcF9icHMAAAAABAAAAAAAAAAEbmFtZQAAABAAAAAAAAAACm9wZW5fY2FyZHMAAAAAAAQAAAAAAAAAC291dHN0YW5kaW5nAAAAAAs=",
+        "AAAAAQAAAAAAAAAAAAAACE1lcmNoYW50AAAACgAAAAAAAAAKY2FyZF9jb3VudAAAAAAABAAAAElJbmRleCBpbnRvIHRoZSBjYXRlZ29yeSBsaXN0IGtlcHQgYnkgdGhlIHdlYnNpdGUuIEJlbG93IGBNQVhfQ0FURUdPUklFU2AuAAAAAAAACGNhdGVnb3J5AAAABAAAAAAAAAAEY2l0eQAAABAAAAAAAAAACWNsb3NlZF9hdAAAAAAAA+gAAAAGAAAAW0hvdyBjdXN0b21lcnMgcmVhY2ggdGhlIHNob3AgdG8gb3JkZXIgb25saW5lOiBhIFdoYXRzQXBwIG51bWJlciBvciBhIHdlYnNpdGUuIE1heSBiZSBlbXB0eS4AAAAAB2NvbnRhY3QAAAAAEAAAAAAAAAAKY3JlYXRlZF9hdAAAAAAABgAAAD1TaG9wJ3Mgc2hhcmUgb2YgYW4gdW51c2VkIGJhbGFuY2UgYXQgZXhwaXJ5LCBpbiBiYXNpcyBwb2ludHMuAAAAAAAAD2V4cGlyeV9rZWVwX2JwcwAAAAAEAAAAAAAAAARuYW1lAAAAEAAAAAAAAAAKb3Blbl9jYXJkcwAAAAAABAAAAAAAAAALb3V0c3RhbmRpbmcAAAAACw==",
         "AAAAAQAAAAAAAAAAAAAACkZ1bmRlckluZm8AAAAAAAIAAAAAAAAAB2FjY291bnQAAAAAEwAAAAAAAAAEcGFpZAAAAAs=",
         "AAAAAQAAAAAAAAAAAAAAClNldHRsZW1lbnQAAAAAAAIAAAAAAAAACnRvX2Z1bmRlcnMAAAAAAAsAAAAAAAAAB3RvX3Nob3AAAAAACw==",
-        "AAAABAAAAAAAAAAAAAAABUVycm9yAAAAAAAAFAAAAAAAAAARQWxyZWFkeVJlZ2lzdGVyZWQAAAAAAAABAAAAAAAAABBNZXJjaGFudE5vdEZvdW5kAAAAAgAAAAAAAAALU3RvcmVDbG9zZWQAAAAAAwAAAAAAAAALSW52YWxpZFJ1bGUAAAAABAAAAAAAAAALSW52YWxpZE5hbWUAAAAABQAAAAAAAAANSW52YWxpZEFtb3VudAAAAAAAAAYAAAAAAAAAEENhcmRMaW1pdFJlYWNoZWQAAAAHAAAAAAAAAA5Ub29NYW55RnVuZGVycwAAAAAACAAAAAAAAAANSW52YWxpZEV4cGlyeQAAAAAAAAkAAAAAAAAADENhcmROb3RGb3VuZAAAAAoAAAAAAAAAC0NhcmRFeHBpcmVkAAAAAAsAAAAAAAAAC0NhcmRTZXR0bGVkAAAAAAwAAAAAAAAAE0luc3VmZmljaWVudEJhbGFuY2UAAAAADQAAAAAAAAAJUXJFeHBpcmVkAAAAAAAADgAAAAAAAAAJUXJUb29Mb25nAAAAAAAADwAAAAAAAAANTm90U2V0dGxlYWJsZQAAAAAAABAAAAAAAAAAD05vdGhpbmdUb1NldHRsZQAAAAARAAAAAAAAAAtOb3RoaW5nT3dlZAAAAAASAAAAAAAAAA5GdW5kZXJOb3RGb3VuZAAAAAAAEwAAAAAAAAAIT3ZlcmZsb3cAAAAU",
+        "AAAABAAAAAAAAAAAAAAABUVycm9yAAAAAAAAFwAAAAAAAAARQWxyZWFkeVJlZ2lzdGVyZWQAAAAAAAABAAAAAAAAABBNZXJjaGFudE5vdEZvdW5kAAAAAgAAAAAAAAALU3RvcmVDbG9zZWQAAAAAAwAAAAAAAAALSW52YWxpZFJ1bGUAAAAABAAAAAAAAAALSW52YWxpZE5hbWUAAAAABQAAAAAAAAANSW52YWxpZEFtb3VudAAAAAAAAAYAAAAAAAAAEENhcmRMaW1pdFJlYWNoZWQAAAAHAAAAAAAAAA5Ub29NYW55RnVuZGVycwAAAAAACAAAAAAAAAANSW52YWxpZEV4cGlyeQAAAAAAAAkAAAAAAAAADENhcmROb3RGb3VuZAAAAAoAAAAAAAAAC0NhcmRFeHBpcmVkAAAAAAsAAAAAAAAAC0NhcmRTZXR0bGVkAAAAAAwAAAAAAAAAE0luc3VmZmljaWVudEJhbGFuY2UAAAAADQAAAAAAAAAJUXJFeHBpcmVkAAAAAAAADgAAAAAAAAAJUXJUb29Mb25nAAAAAAAADwAAAAAAAAANTm90U2V0dGxlYWJsZQAAAAAAABAAAAAAAAAAD05vdGhpbmdUb1NldHRsZQAAAAARAAAAAAAAAAtOb3RoaW5nT3dlZAAAAAASAAAAAAAAAA5GdW5kZXJOb3RGb3VuZAAAAAAAEwAAAAAAAAAIT3ZlcmZsb3cAAAAUAAAAAAAAAA9JbnZhbGlkQ2F0ZWdvcnkAAAAAFQAAAAAAAAALSW52YWxpZENpdHkAAAAAFgAAAAAAAAAOSW52YWxpZENvbnRhY3QAAAAAABc=",
         "AAAABQAAAAAAAAAAAAAACkFtb3VudE93ZWQAAAAAAAEAAAALYW1vdW50X293ZWQAAAAAAwAAAAAAAAAHY2FyZF9pZAAAAAAGAAAAAQAAAAAAAAAHYWNjb3VudAAAAAATAAAAAQAAAAAAAAAGYW1vdW50AAAAAAALAAAAAAAAAAI=",
         "AAAABQAAAAAAAAAAAAAACkNhcmRCb3VnaHQAAAAAAAEAAAALY2FyZF9ib3VnaHQAAAAABQAAAAAAAAAHY2FyZF9pZAAAAAAGAAAAAQAAAAAAAAAIbWVyY2hhbnQAAAATAAAAAQAAAAAAAAAFYnV5ZXIAAAAAAAATAAAAAAAAAAAAAAAGYW1vdW50AAAAAAALAAAAAAAAAAAAAAAKZXhwaXJlc19hdAAAAAAABgAAAAAAAAAC",
         "AAAABQAAAAAAAAAAAAAAC0NhcmRTZXR0bGVkAAAAAAEAAAAMY2FyZF9zZXR0bGVkAAAAAwAAAAAAAAAHY2FyZF9pZAAAAAAGAAAAAQAAAAAAAAAHdG9fc2hvcAAAAAALAAAAAAAAAAAAAAAKdG9fZnVuZGVycwAAAAAACwAAAAAAAAAC",
         "AAAABQAAAAAAAAAAAAAAC093ZWRDbGFpbWVkAAAAAAEAAAAMb3dlZF9jbGFpbWVkAAAAAwAAAAAAAAAHY2FyZF9pZAAAAAAGAAAAAQAAAAAAAAAHYWNjb3VudAAAAAATAAAAAQAAAAAAAAAGYW1vdW50AAAAAAALAAAAAAAAAAI=",
         "AAAABQAAAAAAAAAAAAAAC1N0b3JlQ2xvc2VkAAAAAAEAAAAMc3RvcmVfY2xvc2VkAAAAAQAAAAAAAAAIbWVyY2hhbnQAAAATAAAAAQAAAAI=",
-        "AAAABQAAAAAAAAAAAAAAC1N0b3JlT3BlbmVkAAAAAAEAAAAMc3RvcmVfb3BlbmVkAAAAAwAAAAAAAAAIbWVyY2hhbnQAAAATAAAAAQAAAAAAAAAEbmFtZQAAABAAAAAAAAAAAAAAAA9leHBpcnlfa2VlcF9icHMAAAAABAAAAAAAAAAC",
+        "AAAABQAAAAAAAAAAAAAAC1N0b3JlT3BlbmVkAAAAAAEAAAAMc3RvcmVfb3BlbmVkAAAABQAAAAAAAAAIbWVyY2hhbnQAAAATAAAAAQAAAAAAAAAEbmFtZQAAABAAAAAAAAAAAAAAAA9leHBpcnlfa2VlcF9icHMAAAAABAAAAAAAAAAAAAAACGNhdGVnb3J5AAAABAAAAAAAAAAAAAAABGNpdHkAAAAQAAAAAAAAAAI=",
         "AAAABQAAAAAAAAAAAAAADENhcmRSZWRlZW1lZAAAAAEAAAANY2FyZF9yZWRlZW1lZAAAAAAAAAQAAAAAAAAAB2NhcmRfaWQAAAAABgAAAAEAAAAAAAAACG1lcmNoYW50AAAAEwAAAAEAAAAAAAAABmFtb3VudAAAAAAACwAAAAAAAAAAAAAAB2JhbGFuY2UAAAAACwAAAAAAAAAC",
         "AAAABQAAAAAAAAAAAAAADENhcmRUb3BwZWRVcAAAAAEAAAAOY2FyZF90b3BwZWRfdXAAAAAAAAMAAAAAAAAAB2NhcmRfaWQAAAAABgAAAAEAAAAAAAAABmZ1bmRlcgAAAAAAEwAAAAAAAAAAAAAABmFtb3VudAAAAAAACwAAAAAAAAAC",
+        "AAAABQAAAAAAAAAAAAAADFN0b3JlVXBkYXRlZAAAAAEAAAANc3RvcmVfdXBkYXRlZAAAAAAAAAUAAAAAAAAACG1lcmNoYW50AAAAEwAAAAEAAAAAAAAABG5hbWUAAAAQAAAAAAAAAAAAAAAIY2F0ZWdvcnkAAAAEAAAAAAAAAAAAAAAEY2l0eQAAABAAAAAAAAAAAAAAAAdjb250YWN0AAAAABAAAAAAAAAAAg==",
         "AAAABQAAAAAAAAAAAAAAEUV4cGlyeVJ1bGVDaGFuZ2VkAAAAAAAAAQAAABNleHBpcnlfcnVsZV9jaGFuZ2VkAAAAAAIAAAAAAAAACG1lcmNoYW50AAAAEwAAAAEAAAAAAAAAD2V4cGlyeV9rZWVwX2JwcwAAAAAEAAAAAAAAAAI=" ]),
       options
     )
@@ -257,10 +292,13 @@ export class Client extends ContractClient {
         top_up: this.txFromJSON<Result<void>>,
         get_card: this.txFromJSON<Result<Card>>,
         get_owed: this.txFromJSON<i128>,
+        get_shop: this.txFromJSON<Result<string>>,
         claim_owed: this.txFromJSON<Result<i128>>,
         get_funder: this.txFromJSON<Result<FunderInfo>>,
+        shop_count: this.txFromJSON<u32>,
         total_owed: this.txFromJSON<i128>,
         close_store: this.txFromJSON<Result<void>>,
+        update_shop: this.txFromJSON<Result<void>>,
         get_merchant: this.txFromJSON<Result<Merchant>>,
         set_expiry_rule: this.txFromJSON<Result<void>>,
         get_merchant_card: this.txFromJSON<Result<u64>>,
