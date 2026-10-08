@@ -1,0 +1,12 @@
+{
+  "description": "Redemption message test vector. The contract tests and the SDK tests both check these values.",
+  "network_passphrase": "Test SDF Network ; September 2015",
+  "secret_seed_hex": "0707070707070707070707070707070707070707070707070707070707070707",
+  "public_key_hex": "ea4a6c63e29c520abef5507b132ec5f9954776aebebe7b92421eea691446d22c",
+  "card_id": 42,
+  "amount": 125000000,
+  "nonce": 3,
+  "valid_until": 1760000900,
+  "message_hex": "4b45505445525f52454445454d5f5631cee0302d59844d32bdca915c8203dd44b33fbb7edc19051ea37abedf28ecd472000000000000002a00000000000000000000000007735940000000030000000068e77b84",
+  "signature_hex": "b11e2df72991af330cdf5aa220b7a793f2211efb9a11dd6fb66f669cc1547f2e9f2c4c1f132c07713f4ea862eff255c3532354226c4e64bb2e6bef6faf555107"
+}
