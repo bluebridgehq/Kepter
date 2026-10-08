@@ -1,5 +1,14 @@
 export { Kepter } from "./client.ts";
-export type { Backing, Card, CardEntry, FunderInfo, KepterOptions, Merchant, Settlement } from "./client.ts";
+export type {
+  Backing,
+  Balances,
+  Card,
+  CardEntry,
+  FunderInfo,
+  KepterOptions,
+  Merchant,
+  Settlement,
+} from "./client.ts";
 export { Client as ContractClient } from "./generated/contract.ts";
 
 export { TESTNET } from "./networks.ts";
@@ -15,6 +24,7 @@ export {
   encodeRedeemQr,
   redeemMessage,
   signRedeem,
+  verifyRedeem,
 } from "./redeem.ts";
 export type { RedeemParams, RedeemQr } from "./redeem.ts";
 
@@ -32,3 +42,5 @@ export { BPS_DENOMINATOR, RULES, describeRule, previewSettlement } from "./rules
 export type { RuleDescription, SettlementInput, SettlementPreview } from "./rules.ts";
 
 export { ERROR_MESSAGES, contractErrorCode, explainError } from "./errors.ts";
+
+export type { AssembledTransaction } from "@stellar/stellar-sdk/contract";

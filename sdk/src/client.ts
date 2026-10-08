@@ -1,5 +1,5 @@
 import { Buffer } from "buffer";
-import { Address, nativeToScVal, rpc, scValToNative, xdr } from "@stellar/stellar-sdk";
+import { Address, Asset, Keypair, nativeToScVal, rpc, scValToNative, xdr } from "@stellar/stellar-sdk";
 import type { AssembledTransaction, ClientOptions } from "@stellar/stellar-sdk/contract";
 
 import {
@@ -34,6 +34,18 @@ export interface Backing {
   held: bigint;
   backed: boolean;
 }
+
+export interface Balances {
+  /** False when the account has never been funded. */
+  exists: boolean;
+  /** XLM that can be spent on fees, after the account's required reserve. In stroops. */
+  xlmAvailable: bigint;
+  /** USDC in base units, or undefined when the account has no USDC trustline. */
+  usdc: bigint | undefined;
+}
+
+/** Half an XLM per reserve unit, in stroops. */
+const BASE_RESERVE = 5_000_000n;
 
 /** getLedgerEntries accepts up to 200 keys per request. */
 const BATCH_SIZE = 100;
@@ -120,6 +132,34 @@ export class Kepter {
     const owed = owedTx.result;
     const held = (balances[0] as { amount?: bigint } | undefined)?.amount ?? 0n;
     return { owed, held, backed: held >= owed };
+  }
+
+  /** The account's spendable XLM and its USDC, read in one request. */
+  async getBalances(address: string): Promise<Balances> {
+    const accountId = Keypair.fromPublicKey(address).xdrAccountId();
+    const [code, issuer] = this.network.usdcAsset.split(":");
+    const accountKey = xdr.LedgerKey.account(new xdr.LedgerKeyAccount({ accountId }));
+    const trustKey = xdr.LedgerKey.trustline(
+      new xdr.LedgerKeyTrustLine({
+        accountId,
+        asset: new Asset(code, issuer).toTrustLineXDRObject(),
+      }),
+    );
+    const { entries } = await this.server.getLedgerEntries(accountKey, trustKey);
+    let exists = false;
+    let xlmAvailable = 0n;
+    let usdc: bigint | undefined;
+    for (const entry of entries) {
+      if (entry.val.type === "account") {
+        const account = entry.val.account;
+        exists = true;
+        const reserve = (2n + BigInt(account.numSubEntries)) * BASE_RESERVE;
+        xlmAvailable = account.balance > reserve ? account.balance - reserve : 0n;
+      } else if (entry.val.type === "trustline") {
+        usdc = entry.val.trustLine.balance;
+      }
+    }
+    return { exists, xlmAvailable, usdc };
   }
 
   // Writes. Each returns a transaction to sign and send with `tx.signAndSend()`.

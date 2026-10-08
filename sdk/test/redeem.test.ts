@@ -9,6 +9,7 @@ import {
   MESSAGE_LENGTH,
   redeemMessage,
   signRedeem,
+  verifyRedeem,
 } from "../src/redeem.ts";
 
 const vectors = JSON.parse(
@@ -60,4 +61,14 @@ test("damaged or foreign QR codes are rejected", () => {
 
 test("negative amounts cannot be signed", () => {
   assert.throws(() => redeemMessage({ ...params, amount: -1n }), RangeError);
+});
+
+test("a scanner can verify a QR before charging", () => {
+  const publicKey = Keypair.fromSecret(secret).rawPublicKey();
+  const qr = signRedeem(secret, params);
+  assert.equal(verifyRedeem(publicKey, params, qr.signature), true);
+  assert.equal(verifyRedeem(publicKey, { ...params, nonce: params.nonce + 1 }, qr.signature), false);
+  assert.equal(verifyRedeem(publicKey, { ...params, amount: params.amount + 1n }, qr.signature), false);
+  const other = Keypair.random().rawPublicKey();
+  assert.equal(verifyRedeem(other, params, qr.signature), false);
 });

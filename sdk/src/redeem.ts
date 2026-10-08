@@ -1,3 +1,4 @@
+import { Buffer } from "buffer";
 import { hash, Keypair } from "@stellar/stellar-sdk";
 
 /** Must match DOMAIN_TAG in contracts/kepter/src/redeem.rs. */
@@ -60,6 +61,20 @@ export function signRedeem(cardSecret: string, params: RedeemParams): RedeemQr {
     validUntil: params.validUntil,
     signature: new Uint8Array(signature),
   };
+}
+
+/**
+ * Checks a signature against the card's public key (from the contract) and its
+ * current nonce, the same way the contract will. Lets a scanner reject a used
+ * or forged QR code before sending anything.
+ */
+export function verifyRedeem(cardPublicKey: Uint8Array, params: RedeemParams, signature: Uint8Array): boolean {
+  try {
+    const keypair = new Keypair({ type: "ed25519", publicKey: Buffer.from(cardPublicKey) });
+    return keypair.verify(Buffer.from(redeemMessage(params)), Buffer.from(signature));
+  } catch {
+    return false;
+  }
 }
 
 /** Encodes a signed redemption as the short text shown in the QR code. */
