@@ -8,6 +8,7 @@
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",
     "dev": "pnpm --filter @kepter/frontend dev",
+    "dev:phone": "pnpm --filter @kepter/frontend dev:phone",
     "lint": "pnpm -r lint"
   },
   "pnpm": {

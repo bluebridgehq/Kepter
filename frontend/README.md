@@ -18,6 +18,20 @@ The site opens at http://localhost:5173 and uses the testnet deployment in [`dep
 
 To point it at another deployment, copy `.env.example` to `.env.local` and fill in the values.
 
+### On a phone
+
+```
+pnpm dev:phone
+```
+
+This serves the site over HTTPS on your local network, because phone browsers only allow the camera (for the scanner) on HTTPS. Open the `Network` address it prints on a phone connected to the same wifi. The certificate is self signed, so the browser shows a warning first: choose Advanced, then continue.
+
+Wallet apps' built in browsers may refuse a self signed certificate. To test wallet signing on a phone, use the hosted site instead.
+
+## Light and dark
+
+The site follows the device setting until someone taps the sun or moon button in the header. That choice is saved on the device.
+
 ## Pages
 
 | Route | Page | Who |
@@ -57,4 +71,10 @@ pnpm --filter @kepter/frontend build
 
 ## Hosting
 
-It builds to a static site in `dist/`. Every route must serve `index.html`. `vercel.json` does this on Vercel. On Render, add a rewrite from `/*` to `/index.html`. Set `VITE_SITE_URL` to the site's address so shared links point to it.
+It builds to a static site in `dist/`. Every route must serve `index.html`.
+
+On Vercel, import the repository and set the root directory to `frontend`. `vercel.json` sets the build command (it builds the SDK first), the output folder and the route rewrite.
+
+On Render, use a static site with the build command `pnpm install && pnpm --filter @kepter/sdk build && pnpm --filter @kepter/frontend build`, publish directory `frontend/dist`, and a rewrite from `/*` to `/index.html`.
+
+Set `VITE_SITE_URL` to the site's address so shared links point to it.
