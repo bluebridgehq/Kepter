@@ -6,6 +6,16 @@
   "scripts": {
     "build": "pnpm -r build",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "dev": "pnpm --filter @kepter/frontend dev",
+    "lint": "pnpm -r lint"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "@reown/appkit",
+      "bufferutil",
+      "secp256k1",
+      "utf-8-validate"
+    ]
   }
 }
