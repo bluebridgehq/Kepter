@@ -1,0 +1,39 @@
+name: Frontend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "frontend/**"
+      - "sdk/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/frontend.yml"
+  pull_request:
+    paths:
+      - "frontend/**"
+      - "sdk/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".github/workflows/frontend.yml"
+  workflow_dispatch:
+
+jobs:
+  frontend:
+    name: Typecheck, lint and build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      # The frontend imports the SDK's built output.
+      - run: pnpm --filter @kepter/sdk build
+      - run: pnpm --filter @kepter/frontend typecheck
+      - run: pnpm --filter @kepter/frontend lint
+      - run: pnpm --filter @kepter/frontend build
