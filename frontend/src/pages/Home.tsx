@@ -11,6 +11,7 @@ const WHYS = [
   { t: "Money set aside", d: "Every card is backed by real dollars held in the contract, not by the shop." },
   { t: "Proof of backing", d: "Every shop page shows its cards are fully backed. Anyone can check." },
   { t: "Nothing to install", d: "The person you gift just opens a link. No app, no account." },
+  { t: "In the shop or online", d: "Show the code at the counter, or send it to the shop on WhatsApp with an order." },
   { t: "Friends can chip in", d: "Up to 20 people can add to one gift with a separate link." },
   { t: "Protected if a shop closes", d: "Everyone who paid gets their share back." },
 ];
@@ -93,15 +94,15 @@ export function Home() {
             Gift cards for the shops people already use, backed by real money.
           </p>
           <div className="flex flex-wrap gap-3">
-            <Button variant="accent" onClick={goSetup} className="min-h-[54px] rounded-[14px] px-6 text-[17px]">
-              Open your shop
-            </Button>
             <Button
-              variant="secondary"
-              onClick={() => navigate(`/s/${DEMO_SHOP}`)}
+              variant="accent"
+              onClick={() => navigate("/shops")}
               className="min-h-[54px] rounded-[14px] px-6 text-[17px]"
             >
-              See a demo shop
+              Find a shop
+            </Button>
+            <Button variant="secondary" onClick={goSetup} className="min-h-[54px] rounded-[14px] px-6 text-[17px]">
+              Open your shop
             </Button>
           </div>
           <FindShop />
@@ -123,7 +124,7 @@ export function Home() {
       <section className="flex flex-col gap-6">
         <h2 className="m-0 text-[30px] font-extrabold tracking-[-.02em]">How it works</h2>
         <div className="grid grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-4">
-          <StepCard n={1} text="Buy a card for any shop on Kepter.">
+          <StepCard n={1} text="Pick a shop near them and buy a card.">
             <div className="tabular flex w-full flex-wrap items-center justify-center gap-2 p-3 font-bold">
               <span className="rounded-full border-[1.5px] border-line bg-surface px-3.5 py-2">$10</span>
               <span className="rounded-full bg-brand px-3.5 py-2 text-brand-ink">$20</span>
@@ -138,7 +139,7 @@ export function Home() {
               <div className="self-start rounded-[14px_14px_14px_4px] bg-surface px-3 py-2 text-ink">Thank you!!</div>
             </div>
           </StepCard>
-          <StepCard n={3} text="They show a QR code at the counter.">
+          <StepCard n={3} text="They show it at the counter, or order online.">
             <div className="flex w-full items-center justify-center">
               <div className="rounded-xl bg-white p-2 shadow-card">
                 <QrImage text={shopUrl(DEMO_SHOP)} size={84} label="" />

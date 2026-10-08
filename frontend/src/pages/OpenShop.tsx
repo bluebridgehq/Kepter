@@ -1,22 +1,20 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { RULES, type Balances } from "@kepter/sdk";
+import { RULES, categoryName, type Balances } from "@kepter/sdk";
 
+import { ShopDetailsForm } from "../components/ShopDetailsForm.tsx";
 import { Button, MessagePanel, QrImage, Skeleton, SuccessCheck } from "../components/ui.tsx";
 import { MIN_XLM_TO_OPEN, XLM_FAUCET_URL, displayUrl, reader, shopUrl } from "../lib/config.ts";
+import { contactLabel } from "../lib/contact.ts";
 import { shortAddress } from "../lib/format.ts";
 import { RULE_OPTIONS, ruleCopy } from "../lib/rules.ts";
 import { copyText, shareLink } from "../lib/share.ts";
+import { EMPTY_DRAFT, checkDraft } from "../lib/shopDetails.ts";
 import { useToast } from "../lib/toast-context.ts";
 import { useTx } from "../lib/tx-context.ts";
 import { useWallet } from "../lib/wallet-context.ts";
 
-const MAX_NAME_BYTES = 48;
-const TITLES = ["What is your shop called?", "Choose the unused balance rule", "Review and open"];
-
-function byteLength(text: string): number {
-  return new TextEncoder().encode(text).length;
-}
+const TITLES = ["Tell people about your shop", "Choose the unused balance rule", "Review and open"];
 
 function formatXlm(stroops: bigint): string {
   return (Number(stroops) / 1e7).toFixed(2);
@@ -31,7 +29,7 @@ export function OpenShop() {
   const [hasShop, setHasShop] = useState<boolean>();
   const [balances, setBalances] = useState<Balances>();
   const [step, setStep] = useState(1);
-  const [name, setName] = useState("");
+  const [draft, setDraft] = useState(EMPTY_DRAFT);
   const [rule, setRule] = useState<number>(RULES.buyerProtected);
   const [openedName, setOpenedName] = useState<string>();
 
@@ -51,21 +49,18 @@ export function OpenShop() {
     };
   }, [address]);
 
-  const trimmed = name.trim();
-  const nameBytes = byteLength(name);
-  const nameTooLong = nameBytes > MAX_NAME_BYTES;
-  const nameBad = trimmed.length === 0 || nameTooLong;
+  const { details } = checkDraft(draft);
   const lowXlm = !!balances && balances.xlmAvailable < MIN_XLM_TO_OPEN;
-  const nextDisabled = (step === 1 && nameBad) || (step === 3 && (lowXlm || !balances));
+  const nextDisabled = (step === 1 && !details) || (step === 3 && (lowXlm || !balances));
 
   const open = async () => {
-    if (!address || !writer) return;
+    if (!address || !writer || !details) return;
     const done = await run({
-      title: `Open ${trimmed}`,
+      title: `Open ${details.name}`,
       amount: "≈ 0.5 XLM set aside",
-      build: () => writer.openShop(address, trimmed, rule),
+      build: () => writer.openShop(address, details, rule),
     });
-    if (done !== undefined) setOpenedName(trimmed);
+    if (done !== undefined) setOpenedName(details.name);
   };
 
   const link = address ? shopUrl(address) : "";
@@ -192,29 +187,7 @@ export function OpenShop() {
           <h1 className="m-0 text-[30px] font-extrabold tracking-[-.02em]">{TITLES[step - 1]}</h1>
         </div>
 
-        {step === 1 && (
-          <div className="flex flex-col gap-2">
-            <label htmlFor="shop-name" className="font-semibold">
-              Shop name
-            </label>
-            <input
-              id="shop-name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Tola's Kitchen"
-              autoComplete="organization"
-              className={`min-h-14 rounded-[14px] border-[1.5px] bg-surface px-4 text-lg text-ink outline-none ${
-                nameTooLong ? "border-bad" : "border-line focus:border-brand"
-              }`}
-            />
-            <div className="flex justify-between gap-3 text-sm">
-              <span className="text-bad">{nameTooLong ? "Shop names must be 1 to 48 characters." : ""}</span>
-              <span className={`tabular ${nameTooLong ? "text-bad" : "text-ink-2"}`}>
-                {nameBytes} / {MAX_NAME_BYTES}
-              </span>
-            </div>
-          </div>
-        )}
+        {step === 1 && <ShopDetailsForm draft={draft} onChange={setDraft} />}
 
         {step === 2 && (
           <div className="flex flex-col gap-3">
@@ -260,12 +233,26 @@ export function OpenShop() {
           </div>
         )}
 
-        {step === 3 && (
+        {step === 3 && details && (
           <div className="flex flex-col gap-3.5">
             <div className="flex flex-col rounded-[18px] border border-line bg-surface">
               <div className="flex justify-between gap-3 border-b border-line px-[18px] py-4">
                 <span className="text-ink-2">Shop name</span>
-                <span className="text-right font-bold [overflow-wrap:anywhere]">{trimmed}</span>
+                <span className="text-right font-bold [overflow-wrap:anywhere]">{details.name}</span>
+              </div>
+              <div className="flex justify-between gap-3 border-b border-line px-[18px] py-4">
+                <span className="text-ink-2">Sells</span>
+                <span className="text-right font-bold">{categoryName(details.category)}</span>
+              </div>
+              <div className="flex justify-between gap-3 border-b border-line px-[18px] py-4">
+                <span className="text-ink-2">City or area</span>
+                <span className="text-right font-bold [overflow-wrap:anywhere]">{details.city}</span>
+              </div>
+              <div className="flex justify-between gap-3 border-b border-line px-[18px] py-4">
+                <span className="text-ink-2">Online orders</span>
+                <span className="text-right font-bold [overflow-wrap:anywhere]">
+                  {details.contact ? contactLabel(details.contact) : "Not set"}
+                </span>
               </div>
               <div className="flex justify-between gap-3 border-b border-line px-[18px] py-4">
                 <span className="text-ink-2">Unused balance rule</span>

@@ -1,17 +1,27 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { previewSettlement, toUnits, type Backing, type CardEntry, type Merchant } from "@kepter/sdk";
+import {
+  categoryName,
+  previewSettlement,
+  toUnits,
+  type Backing,
+  type CardEntry,
+  type Merchant,
+  type ShopDetails,
+} from "@kepter/sdk";
 
 import { GiftCard } from "../components/GiftCard.tsx";
 import { ScanIcon } from "../components/icons.tsx";
 import { BackingSheet } from "../components/InfoSheets.tsx";
 import { Sheet, SheetTitle } from "../components/Sheet.tsx";
+import { ShopDetailsForm } from "../components/ShopDetailsForm.tsx";
 import { BackingBadge, Button, MessagePanel, NewBadge, Skeleton, StatusPill } from "../components/ui.tsx";
 import { backingText } from "../lib/backing.ts";
 import { reader, shopUrl } from "../lib/config.ts";
 import { daysBetween, daysLeftText, money, nowSeconds, usdc } from "../lib/format.ts";
 import { RULE_OPTIONS, ruleCopy } from "../lib/rules.ts";
 import { shareLink } from "../lib/share.ts";
+import { checkDraft, draftFrom } from "../lib/shopDetails.ts";
 import { cardStatus, isUsable, type CardStatus } from "../lib/status.ts";
 import { lastSeenCard, markCardsSeen } from "../lib/storage.ts";
 import { useToast } from "../lib/toast-context.ts";
@@ -19,7 +29,7 @@ import { useTx } from "../lib/tx-context.ts";
 import { useWallet } from "../lib/wallet-context.ts";
 
 type Tab = "waiting" | "settle" | "history";
-type SheetKind = "backing" | "credit" | "rule" | "close" | null;
+type SheetKind = "backing" | "credit" | "rule" | "details" | "close" | null;
 
 interface Row {
   id: bigint;
@@ -220,6 +230,11 @@ export function Dashboard() {
           ) : (
             <Skeleton className="h-9 w-56 rounded-[10px]" />
           )}
+          {merchant && (
+            <span className="text-[15px] text-ink-2">
+              {categoryName(merchant.category)} · {merchant.city}
+            </span>
+          )}
           {merchant && <BackingBadge text={backingText(merchant, data?.backing)} onClick={() => setSheet("backing")} />}
         </div>
         {!closed && (
@@ -359,6 +374,7 @@ export function Dashboard() {
                   {[
                     ["Give store credit", () => setSheet("credit")],
                     ["Change rule for new cards", () => setSheet("rule")],
+                    ["Edit shop details", () => setSheet("details")],
                     ["Print poster", () => navigate("/shop/poster")],
                     ["Share shop link", shareShop],
                   ].map(([label, onClick]) => (
@@ -418,6 +434,25 @@ export function Dashboard() {
             });
             if (done !== undefined) {
               toast("Rule updated for new cards");
+              void load();
+            }
+          }}
+        />
+      )}
+      {sheet === "details" && merchant && (
+        <DetailsSheet
+          merchant={merchant}
+          onClose={() => setSheet(null)}
+          onSave={async (details) => {
+            if (!writer) return;
+            setSheet(null);
+            const done = await run({
+              title: "Update shop details",
+              amount: details.name,
+              build: () => writer.updateShop(address, details),
+            });
+            if (done !== undefined) {
+              toast("Shop details updated");
               void load();
             }
           }}
@@ -551,6 +586,38 @@ function RuleChangeSheet({
         className="min-h-[54px] rounded-[14px] text-[17px]"
       >
         Save rule
+      </Button>
+    </Sheet>
+  );
+}
+
+function DetailsSheet({
+  merchant,
+  onClose,
+  onSave,
+}: {
+  merchant: Merchant;
+  onClose: () => void;
+  onSave: (details: ShopDetails) => void;
+}) {
+  const [draft, setDraft] = useState(() => draftFrom(merchant));
+  const { details } = checkDraft(draft);
+  const unchanged =
+    !!details &&
+    details.name === merchant.name &&
+    details.category === merchant.category &&
+    details.city === merchant.city &&
+    details.contact === merchant.contact;
+  return (
+    <Sheet onClose={onClose}>
+      <SheetTitle>Shop details</SheetTitle>
+      <ShopDetailsForm draft={draft} onChange={setDraft} />
+      <Button
+        disabled={!details || unchanged}
+        onClick={() => details && onSave(details)}
+        className="min-h-[54px] rounded-[14px] text-[17px]"
+      >
+        Save details
       </Button>
     </Sheet>
   );

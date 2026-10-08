@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { BrowserQRCodeReader, type IScannerControls } from "@zxing/browser";
-import { decodeRedeemQr, verifyRedeem, type Merchant, type RedeemQr } from "@kepter/sdk";
+import { decodeRedeemQr, findRedeemCode, verifyRedeem, type Merchant, type RedeemQr } from "@kepter/sdk";
 
 import { CheckIcon, CrossIcon } from "../components/icons.tsx";
 import { Button, MessagePanel, Rows } from "../components/ui.tsx";
@@ -78,7 +78,7 @@ export function Scan() {
       try {
         let qr: RedeemQr;
         try {
-          qr = decodeRedeemQr(text.trim());
+          qr = decodeRedeemQr((findRedeemCode(text) ?? text).trim());
         } catch {
           return fail(ERRORS.notKepter);
         }
@@ -219,7 +219,7 @@ export function Scan() {
             <div className="flex flex-col gap-3 rounded-[22px] border border-line bg-surface p-6">
               <span className="text-xl font-extrabold">Camera is blocked</span>
               <span className="text-ink-2">
-                Allow camera access in your browser settings, then reload. Or paste the code text below.
+                Allow camera access in your browser settings, then reload. Or paste the customer's code below.
               </span>
             </div>
           ) : (
@@ -242,12 +242,13 @@ export function Scan() {
             open={cameraBlocked}
             className="rounded-2xl border border-line bg-surface px-4 py-1"
           >
-            <summary className="flex min-h-11 cursor-pointer items-center font-bold">Paste the code text instead</summary>
+            <summary className="flex min-h-11 cursor-pointer items-center font-bold">Online order? Paste the customer's code</summary>
             <div className="flex gap-2 pt-1 pb-3.5">
               <input
                 value={pasted}
                 onChange={(e) => setPasted(e.target.value)}
-                placeholder="Paste code"
+                placeholder="Paste the code or the whole message"
+                aria-label="Payment code"
                 className="min-h-12 min-w-0 flex-1 rounded-xl border-[1.5px] border-line bg-bg px-3 text-base text-ink"
               />
               <Button

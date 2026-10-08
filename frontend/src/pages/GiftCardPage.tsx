@@ -1,18 +1,29 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
-import { encodeRedeemQr, parseCardLink, signRedeem, toUnits, type Card, type CardLink, type Merchant } from "@kepter/sdk";
+import {
+  categoryName,
+  encodeRedeemQr,
+  parseCardLink,
+  signRedeem,
+  toUnits,
+  type Card,
+  type CardLink,
+  type Merchant,
+} from "@kepter/sdk";
 
 import { GiftCard } from "../components/GiftCard.tsx";
 import { Button, QrImage, Skeleton, StatusPill } from "../components/ui.tsx";
 import { QR_SECONDS, network, reader } from "../lib/config.ts";
+import { contactKind, contactLabel, contactUrl } from "../lib/contact.ts";
 import { dateLong, dateShort, daysLeftText, dollars, mmss, money, nowSeconds } from "../lib/format.ts";
 import { ruleCopy } from "../lib/rules.ts";
-import { calendarFile, downloadFile, isLikelyDesktop } from "../lib/share.ts";
+import { calendarFile, copyText, downloadFile, isLikelyDesktop, whatsappUrl } from "../lib/share.ts";
 import { cardStatus, isUsable, type CardStatus } from "../lib/status.ts";
 import { cacheBalance, cachedBalance, giftOpened, markGiftOpened } from "../lib/storage.ts";
 import { useToast } from "../lib/toast-context.ts";
 
-type Step = "wrapped" | "view" | "amount" | "qr";
+type Step = "wrapped" | "view" | "amount" | "qr" | "online";
+type Mode = "counter" | "online";
 
 interface Loaded {
   card: Card;
@@ -61,6 +72,7 @@ export function GiftCardPage() {
   const [step, setStep] = useState<Step>(() => (link && !giftOpened(idText) ? "wrapped" : "view"));
   const [opening, setOpening] = useState(false);
   const [bill, setBill] = useState("");
+  const [mode, setMode] = useState<Mode>("counter");
   const [code, setCode] = useState<Code>();
   const [now, setNow] = useState(() => Number(nowSeconds()));
   const [showRefresh, setShowRefresh] = useState(false);
@@ -96,15 +108,17 @@ export function GiftCardPage() {
     };
   }, [link, idText, fetchCard]);
 
+  const showingCode = step === "qr" || step === "online";
+
   useEffect(() => {
-    if (step !== "qr") return;
+    if (!showingCode) return;
     const tick = setInterval(() => setNow(Number(nowSeconds())), 1000);
     return () => clearInterval(tick);
-  }, [step]);
+  }, [showingCode]);
 
   // While the code is on screen, watch for the shop completing the payment.
   useEffect(() => {
-    if (step !== "qr" || !code) return;
+    if (!showingCode || !code) return;
     const poll = setInterval(async () => {
       try {
         const loaded = await fetchCard();
@@ -120,7 +134,7 @@ export function GiftCardPage() {
       }
     }, 4000);
     return () => clearInterval(poll);
-  }, [step, code, fetchCard, toast]);
+  }, [showingCode, code, fetchCard, toast]);
 
   useEffect(() => {
     if (step !== "qr") return;
@@ -135,7 +149,7 @@ export function GiftCardPage() {
   }, [step]);
 
   const makeCode = useCallback(
-    async (amount: bigint) => {
+    async (amount: bigint, next: "qr" | "online") => {
       if (!link) return;
       let loaded = data;
       try {
@@ -155,7 +169,7 @@ export function GiftCardPage() {
       });
       setNow(Math.floor(Date.now() / 1000));
       setCode({ text: encodeRedeemQr(qr), amount, nonce: loaded.card.nonce, validUntil });
-      setStep("qr");
+      setStep(next);
     },
     [link, data, fetchCard],
   );
@@ -339,7 +353,9 @@ export function GiftCardPage() {
           >
             ← Back
           </button>
-          <h1 className="m-0 text-[28px] font-extrabold tracking-[-.02em]">How much is the bill?</h1>
+          <h1 className="m-0 text-[28px] font-extrabold tracking-[-.02em]">
+            {mode === "online" ? "How much is your order?" : "How much is the bill?"}
+          </h1>
           <div
             className={`flex items-center gap-1.5 rounded-[22px] border-2 bg-surface px-5 py-[18px] ${
               billBad && bill !== "" ? "border-bad" : "border-line"
@@ -379,10 +395,10 @@ export function GiftCardPage() {
           <Button
             variant="accent"
             disabled={billBad}
-            onClick={() => amount !== undefined && void makeCode(amount)}
+            onClick={() => amount !== undefined && void makeCode(amount, mode === "online" ? "online" : "qr")}
             className="min-h-[62px] rounded-2xl text-[19px] font-extrabold"
           >
-            Show my code
+            {mode === "online" ? "Get my payment code" : "Show my code"}
           </Button>
         </div>
       </div>
@@ -404,7 +420,7 @@ export function GiftCardPage() {
         </span>
         <div className="mt-2 flex w-full max-w-[340px] flex-col gap-2">
           <button
-            onClick={() => void makeCode(code.amount)}
+            onClick={() => void makeCode(code.amount, "qr")}
             className="min-h-[52px] cursor-pointer rounded-[14px] border-none bg-[#F4EEE4] text-base font-bold text-[#14211D]"
           >
             Make a new code
@@ -423,6 +439,94 @@ export function GiftCardPage() {
         <span className="max-w-[30ch] text-[13px] text-[#4B5853]">
           Code not working? Your phone's clock may be off. Make a new code.
         </span>
+      </div>
+    );
+  }
+
+  if (step === "online" && code) {
+    const left = code.validUntil - now;
+    const contact = merchant?.contact ?? "";
+    const kind = contactKind(contact);
+    const message = `Hi ${shopName}, I'd like to pay ${money(code.amount)} for my order with my Kepter gift card. Payment code: ${code.text}`;
+    const finish = () => {
+      setCode(undefined);
+      setShowRefresh(true);
+      setStep("view");
+    };
+    return (
+      <div className="mx-auto flex max-w-[440px] flex-col gap-5 px-5 pt-1 pb-10">
+        <div className="animate-kup flex flex-col gap-[18px]">
+          <div className="flex flex-col gap-1">
+            <span className="text-[15px] font-semibold text-ink-2">Your payment code for {shopName}</span>
+            <span className="tabular text-5xl leading-none font-extrabold tracking-[-.03em]">{money(code.amount)}</span>
+          </div>
+          <div
+            className={`tabular rounded-2xl border-[1.5px] border-line bg-surface-2 p-4 font-mono text-[15px] break-all select-all ${
+              left > 0 ? "" : "opacity-40"
+            }`}
+          >
+            {code.text}
+          </div>
+          <span className={`tabular text-[17px] font-bold ${left > 0 ? "text-ink" : "text-bad"}`}>
+            {left > 0 ? `Works for ${mmss(left)}` : "This code has expired. Make a new one."}
+          </span>
+          {left > 0 && (
+            <div className="flex flex-col gap-2.5">
+              {kind === "whatsapp" ? (
+                <a
+                  href={contactUrl(contact, message)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex min-h-[58px] items-center justify-center rounded-2xl bg-accent text-[17px] font-extrabold text-accent-ink no-underline hover:text-accent-ink"
+                >
+                  Send to {shopName} on WhatsApp
+                </a>
+              ) : (
+                <a
+                  href={whatsappUrl(message)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex min-h-[58px] items-center justify-center rounded-2xl bg-accent text-[17px] font-extrabold text-accent-ink no-underline hover:text-accent-ink"
+                >
+                  Send with WhatsApp
+                </a>
+              )}
+              <Button
+                variant="secondary"
+                onClick={async () => toast((await copyText(message)) ? "Code copied" : "Could not copy")}
+                className="min-h-[52px] rounded-2xl text-base"
+              >
+                Copy code
+              </Button>
+              {kind === "website" && (
+                <a
+                  href={contactUrl(contact)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex min-h-[52px] items-center justify-center rounded-2xl border-[1.5px] border-line bg-surface text-base font-bold text-ink no-underline hover:text-ink"
+                >
+                  Open {contactLabel(contact)}
+                </a>
+              )}
+            </div>
+          )}
+          <div className="flex flex-col gap-1.5 rounded-[18px] border border-line bg-surface p-[18px] text-[15px] text-ink-2">
+            <span>Send this code to the shop with your order. They charge it, then you get your order.</span>
+            <span>Only {shopName} can use it, and only for {money(code.amount)}. This page updates when they do.</span>
+          </div>
+          <div className="flex gap-2.5">
+            <Button
+              variant="secondary"
+              onClick={() => void makeCode(code.amount, "online")}
+              className="min-h-[52px] flex-1 rounded-2xl text-base"
+            >
+              New code
+            </Button>
+            <Button onClick={finish} className="min-h-[52px] flex-1 rounded-2xl text-base">
+              Done
+            </Button>
+          </div>
+        </div>
       </div>
     );
   }
@@ -479,11 +583,26 @@ export function GiftCardPage() {
           </div>
         )}
 
+        {merchant && !ended && (
+          <div className="flex flex-col gap-1 rounded-[18px] border border-line bg-surface px-[18px] py-4">
+            <span className="text-[13px] font-bold text-ink-2">Where to use it</span>
+            <span className="text-[17px] font-bold [overflow-wrap:anywhere]">{shopName}</span>
+            <span className="text-[15px] text-ink-2 [overflow-wrap:anywhere]">
+              {categoryName(merchant.category)} · {merchant.city}
+            </span>
+            {contactUrl(merchant.contact) && (
+              <a href={contactUrl(merchant.contact)} target="_blank" rel="noreferrer" className="text-[15px] font-semibold">
+                {contactLabel(merchant.contact)}
+              </a>
+            )}
+          </div>
+        )}
+
         {!ended && (
           <div className="flex flex-col gap-2.5">
             {showRefresh && (
               <div className="flex items-center justify-between gap-3 rounded-2xl bg-brand-soft px-4 py-3.5">
-                <span className="text-[15px] text-ink">Paid at the counter? Refresh to see your balance.</span>
+                <span className="text-[15px] text-ink">Paid already? Refresh to see your balance.</span>
                 <Button
                   onClick={async () => {
                     setRefreshing(true);
@@ -511,11 +630,24 @@ export function GiftCardPage() {
               disabled={!card || !!offlineSince}
               onClick={() => {
                 setBill("");
+                setMode("counter");
                 setStep("amount");
               }}
               className="min-h-[62px] rounded-2xl text-[19px] font-extrabold"
             >
               Pay at the counter
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={!card || !!offlineSince}
+              onClick={() => {
+                setBill("");
+                setMode("online");
+                setStep("amount");
+              }}
+              className="min-h-[56px] rounded-2xl text-[17px]"
+            >
+              Use online
             </Button>
             {card && (
               <Button

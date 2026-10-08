@@ -49,12 +49,20 @@ export function Layout() {
         </Link>
         <div className="flex items-center gap-1.5 sm:gap-3.5">
           {!onGiftCard && (
-            <button
-              onClick={() => navigate(address ? "/shop" : "/open")}
-              className="cursor-pointer border-none bg-transparent px-0.5 py-2.5 text-[15px] font-semibold whitespace-nowrap text-ink max-[359px]:hidden sm:px-1"
-            >
-              For shops
-            </button>
+            <>
+              <Link
+                to="/shops"
+                className="px-0.5 py-2.5 text-[15px] font-semibold whitespace-nowrap text-ink no-underline hover:text-ink sm:px-1"
+              >
+                Shops
+              </Link>
+              <button
+                onClick={() => navigate(address ? "/shop" : "/open")}
+                className="hidden cursor-pointer border-none bg-transparent px-1 py-2.5 text-[15px] font-semibold whitespace-nowrap text-ink sm:block"
+              >
+                For shops
+              </button>
+            </>
           )}
           {!onGiftCard && <WalletButton />}
           <ThemeButton />

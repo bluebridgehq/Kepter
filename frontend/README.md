@@ -1,6 +1,6 @@
 # Kepter website
 
-The Kepter website: the home page, opening a shop, the shop dashboard, the counter scanner, the poster, buying a card, chipping in, and the gift card the recipient opens.
+The Kepter website: the home page, the shop list, opening a shop, the shop dashboard, the counter scanner, the poster, buying a card, chipping in, and the gift card the recipient opens.
 
 Built with Vite, React 19, TypeScript, Tailwind CSS v4 and React Router. It talks to Stellar only through [`@kepter/sdk`](../sdk) and has no backend.
 
@@ -37,13 +37,14 @@ The site follows the device setting until someone taps the sun or moon button in
 | Route | Page | Who |
 |---|---|---|
 | `/` | Home | Everyone |
+| `/shops` | Find a shop by category, name or city | Buyer |
 | `/open` | Open a shop, in 3 steps | Shop owner |
-| `/shop` | Dashboard: cards waiting to be spent, ready to settle, history, store credit, rule, close | Shop owner |
-| `/shop/scan` | Scan a customer's code at the counter | Shop owner |
+| `/shop` | Dashboard: cards waiting to be spent, ready to settle, history, store credit, rule, shop details, close | Shop owner |
+| `/shop/scan` | Scan a customer's code at the counter, or paste one from an online order | Shop owner |
 | `/shop/poster` | Printable counter poster and a square image for social | Shop owner |
 | `/s/:shop` | Buy a gift card at a shop | Buyer |
 | `/g/:cardId` | Chip in to a gift | Friends |
-| `/c/:cardId#k=...` | The gift card: unwrap, balance, pay at the counter | Recipient |
+| `/c/:cardId#k=...` | The gift card: unwrap, balance, pay at the counter or online | Recipient |
 
 The recipient's pages never use crypto words. The card's secret lives after `#` in the link and never reaches a server.
 

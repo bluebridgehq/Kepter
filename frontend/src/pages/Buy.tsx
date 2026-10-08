@@ -4,6 +4,7 @@ import {
   MAX_MESSAGE_LENGTH,
   buildCardLink,
   buildChipInLink,
+  categoryName,
   createCardKey,
   toUnits,
   type Backing,
@@ -321,11 +322,13 @@ export function Buy() {
           <h1 className="m-0 text-[clamp(30px,5vw,42px)] leading-[1.08] font-extrabold tracking-[-.025em] [overflow-wrap:anywhere]">
             {merchant.name}
           </h1>
+          <span className="text-[17px] text-ink-2 [overflow-wrap:anywhere]">
+            {categoryName(merchant.category)} · {merchant.city}
+          </span>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
             <BackingBadge text={backingText(merchant, backing)} onClick={() => setSheet("backing")} />
             <span className="tabular text-sm text-ink-2">Shop account {shortAddress(shop)}</span>
           </div>
-          <span className="text-sm text-ink-2">Get this link from the shop itself.</span>
         </div>
 
         {ownShop && (
