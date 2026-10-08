@@ -15,6 +15,8 @@ cd kepter/contracts
 cargo test
 ```
 
+For the SDK you also need Node 24 or newer and pnpm. From the repository root run `pnpm install`, then `pnpm --filter @kepter/sdk test`.
+
 Read [docs/DESIGN.md](docs/DESIGN.md) before changing contract logic. It explains the card lifecycle, the redemption message, settlement and the running totals.
 
 ## Picking an issue
@@ -42,6 +44,8 @@ cargo clippy --all-targets -- -D warnings
 cargo test
 stellar contract build
 ```
+
+For SDK changes, run `pnpm typecheck`, `pnpm test` and `pnpm build` inside `sdk/`. If you change the contract's interface, rebuild it and run `pnpm generate` in `sdk/` so the generated client matches.
 
 CI runs the same checks. Link the issue in the description with `Closes #<number>`.
 
