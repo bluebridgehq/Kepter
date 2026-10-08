@@ -12,6 +12,9 @@ pub const MIN_CARD_LIFE: u64 = 7 * DAY_SECONDS;
 pub const MAX_CARD_LIFE: u64 = 180 * DAY_SECONDS;
 pub const MAX_QR_WINDOW: u64 = 15 * 60;
 pub const MAX_NAME_LEN: u32 = 48;
+pub const MAX_CITY_LEN: u32 = 48;
+pub const MAX_CONTACT_LEN: u32 = 80;
+pub const MAX_CATEGORIES: u32 = 32;
 pub const BPS_DENOMINATOR: u32 = 10_000;
 
 const DAY_SECONDS: u64 = 24 * 60 * 60;
@@ -23,6 +26,8 @@ pub enum DataKey {
     Usdc,
     NextCardId,
     TotalOwed,
+    ShopCount,
+    Shop(u32),
     Merchant(Address),
     Card(u64),
     MerchantCard(Address, u32),
@@ -81,6 +86,26 @@ pub fn add_total_owed(env: &Env, delta: i128) -> Result<(), Error> {
     let total = total_owed(env).checked_add(delta).ok_or(Error::Overflow)?;
     env.storage().instance().set(&DataKey::TotalOwed, &total);
     Ok(())
+}
+
+pub fn shop_count(env: &Env) -> u32 {
+    env.storage()
+        .instance()
+        .get(&DataKey::ShopCount)
+        .unwrap_or(0)
+}
+
+/// Adds a shop to the list of every shop ever opened, in opening order.
+pub fn push_shop(env: &Env, merchant: &Address) {
+    let index = shop_count(env);
+    set(env, &DataKey::Shop(index), merchant);
+    env.storage()
+        .instance()
+        .set(&DataKey::ShopCount, &(index + 1));
+}
+
+pub fn shop(env: &Env, index: u32) -> Option<Address> {
+    env.storage().persistent().get(&DataKey::Shop(index))
 }
 
 pub fn has_merchant(env: &Env, merchant: &Address) -> bool {

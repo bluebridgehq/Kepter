@@ -20,6 +20,7 @@ pub const DAY: u64 = 24 * 60 * 60;
 pub const BUYER_PROTECTED: u32 = 0;
 pub const SHARED: u32 = 5_000;
 pub const SHOP_KEEPS: u32 = 10_000;
+pub const FOOD: u32 = 1;
 
 pub fn usdc(amount: i128) -> i128 {
     amount * UNIT
@@ -52,7 +53,7 @@ impl Setup {
         let admin = StellarAssetClient::new(&env, &usdc_id);
 
         let shop = Address::generate(&env);
-        kepter.register_merchant(&shop, &String::from_str(&env, "Tola's Kitchen"), &rule);
+        open_shop(&kepter, &env, &shop, "Tola's Kitchen", rule);
 
         let buyer = Address::generate(&env);
         admin.mint(&buyer, &usdc(10_000));
@@ -112,6 +113,17 @@ impl Setup {
             "total owed must equal the contract's USDC balance"
         );
     }
+}
+
+pub fn open_shop(kepter: &KepterClient, env: &Env, shop: &Address, name: &str, rule: u32) {
+    kepter.register_merchant(
+        shop,
+        &String::from_str(env, name),
+        &rule,
+        &FOOD,
+        &String::from_str(env, "Yaba, Lagos"),
+        &String::from_str(env, "+2348012345678"),
+    );
 }
 
 pub fn signing_key(seed: u8) -> SigningKey {

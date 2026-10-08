@@ -7,6 +7,19 @@ pub struct StoreOpened {
     pub merchant: Address,
     pub name: String,
     pub expiry_keep_bps: u32,
+    pub category: u32,
+    pub city: String,
+}
+
+#[contractevent]
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub struct StoreUpdated {
+    #[topic]
+    pub merchant: Address,
+    pub name: String,
+    pub category: u32,
+    pub city: String,
+    pub contact: String,
 }
 
 #[contractevent]

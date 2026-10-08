@@ -4,6 +4,11 @@ use soroban_sdk::{contracttype, Address, BytesN, String};
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Merchant {
     pub name: String,
+    /// Index into the category list kept by the website. Below `MAX_CATEGORIES`.
+    pub category: u32,
+    pub city: String,
+    /// How customers reach the shop to order online: a WhatsApp number or a website. May be empty.
+    pub contact: String,
     /// Shop's share of an unused balance at expiry, in basis points.
     pub expiry_keep_bps: u32,
     pub closed_at: Option<u64>,

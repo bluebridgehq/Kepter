@@ -24,4 +24,7 @@ pub enum Error {
     NothingOwed = 18,
     FunderNotFound = 19,
     Overflow = 20,
+    InvalidCategory = 21,
+    InvalidCity = 22,
+    InvalidContact = 23,
 }

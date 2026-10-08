@@ -18,11 +18,11 @@ pub use types::{Card, FunderInfo, Merchant, Settlement};
 
 use events::{
     CardBought, CardRedeemed, CardSettled, CardToppedUp, ExpiryRuleChanged, OwedClaimed,
-    StoreClosed, StoreOpened,
+    StoreClosed, StoreOpened, StoreUpdated,
 };
 use storage::{
-    BPS_DENOMINATOR, MAX_CARD_BALANCE, MAX_CARD_LIFE, MAX_FUNDERS, MAX_NAME_LEN, MAX_QR_WINDOW,
-    MIN_AMOUNT, MIN_CARD_LIFE,
+    BPS_DENOMINATOR, MAX_CARD_BALANCE, MAX_CARD_LIFE, MAX_CATEGORIES, MAX_CITY_LEN,
+    MAX_CONTACT_LEN, MAX_FUNDERS, MAX_NAME_LEN, MAX_QR_WINDOW, MIN_AMOUNT, MIN_CARD_LIFE,
 };
 
 #[contract]
@@ -35,27 +35,31 @@ impl Kepter {
         storage::extend_instance(&env);
     }
 
-    /// Opens a shop and creates its USDC trustline so it can be paid.
+    /// Opens a shop, adds it to the shop list and creates its USDC trustline so it can be paid.
     pub fn register_merchant(
         env: Env,
         merchant: Address,
         name: String,
         expiry_keep_bps: u32,
+        category: u32,
+        city: String,
+        contact: String,
     ) -> Result<(), Error> {
         merchant.require_auth();
         storage::extend_instance(&env);
         if storage::has_merchant(&env, &merchant) {
             return Err(Error::AlreadyRegistered);
         }
-        if name.is_empty() || name.len() > MAX_NAME_LEN {
-            return Err(Error::InvalidName);
-        }
+        check_details(&name, category, &city, &contact)?;
         check_rule(expiry_keep_bps)?;
 
         token::StellarAssetClient::new(&env, &storage::usdc(&env)).trust(&merchant);
 
         let shop = Merchant {
             name: name.clone(),
+            category,
+            city: city.clone(),
+            contact,
             expiry_keep_bps,
             closed_at: None,
             card_count: 0,
@@ -64,10 +68,42 @@ impl Kepter {
             created_at: env.ledger().timestamp(),
         };
         storage::set_merchant(&env, &merchant, &shop);
+        storage::push_shop(&env, &merchant);
         StoreOpened {
             merchant,
             name,
             expiry_keep_bps,
+            category,
+            city,
+        }
+        .publish(&env);
+        Ok(())
+    }
+
+    /// Changes the shop's name, category, city and contact.
+    pub fn update_shop(
+        env: Env,
+        merchant: Address,
+        name: String,
+        category: u32,
+        city: String,
+        contact: String,
+    ) -> Result<(), Error> {
+        merchant.require_auth();
+        storage::extend_instance(&env);
+        check_details(&name, category, &city, &contact)?;
+        let mut shop = open_merchant(&env, &merchant)?;
+        shop.name = name.clone();
+        shop.category = category;
+        shop.city = city.clone();
+        shop.contact = contact.clone();
+        storage::set_merchant(&env, &merchant, &shop);
+        StoreUpdated {
+            merchant,
+            name,
+            category,
+            city,
+            contact,
         }
         .publish(&env);
         Ok(())
@@ -340,6 +376,16 @@ impl Kepter {
         storage::merchant(&env, &merchant)
     }
 
+    /// How many shops have ever opened, closed ones included.
+    pub fn shop_count(env: Env) -> u32 {
+        storage::shop_count(&env)
+    }
+
+    /// The shop at a position in the list, starting from 0 in opening order.
+    pub fn get_shop(env: Env, index: u32) -> Result<Address, Error> {
+        storage::shop(&env, index).ok_or(Error::MerchantNotFound)
+    }
+
     pub fn get_card(env: Env, card_id: u64) -> Result<Card, Error> {
         storage::card(&env, card_id)
     }
@@ -376,6 +422,27 @@ fn usdc_client(env: &Env) -> token::TokenClient<'_> {
 fn check_rule(expiry_keep_bps: u32) -> Result<(), Error> {
     if expiry_keep_bps > BPS_DENOMINATOR {
         return Err(Error::InvalidRule);
+    }
+    Ok(())
+}
+
+fn check_details(
+    name: &String,
+    category: u32,
+    city: &String,
+    contact: &String,
+) -> Result<(), Error> {
+    if name.is_empty() || name.len() > MAX_NAME_LEN {
+        return Err(Error::InvalidName);
+    }
+    if category >= MAX_CATEGORIES {
+        return Err(Error::InvalidCategory);
+    }
+    if city.is_empty() || city.len() > MAX_CITY_LEN {
+        return Err(Error::InvalidCity);
+    }
+    if contact.len() > MAX_CONTACT_LEN {
+        return Err(Error::InvalidContact);
     }
     Ok(())
 }
