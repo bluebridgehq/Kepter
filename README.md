@@ -320,7 +320,7 @@ We would love your help. Here is how to jump in:
 2. Read [CONTRIBUTING.md](CONTRIBUTING.md) for setup and the checks to run
 3. Comment on an issue to ask for it, wait to be assigned, then open a pull request with `Closes #<number>`
 
-Kepter takes part in the [Drips Wave](https://www.drips.network/wave) program for Stellar. Questions go to [SUPPORT.md](SUPPORT.md), and security reports to [SECURITY.md](SECURITY.md), never to a public issue.
+Questions go to [SUPPORT.md](SUPPORT.md), and security reports to [SECURITY.md](SECURITY.md), never to a public issue.
 
 <br />
 

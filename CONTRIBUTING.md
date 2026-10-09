@@ -25,13 +25,7 @@ Read [docs/DESIGN.md](docs/DESIGN.md) before changing contract logic. It explain
 - Every issue has a description, the files involved, acceptance criteria and a size (`complexity: trivial`, `medium` or `high`).
 - Comment on the issue to ask for it, and **wait to be assigned** before you start. This stops two people doing the same work.
 - If something is unclear, ask on the issue. Small questions early save big rewrites later.
-
-### Drips Wave
-
-Kepter takes part in the [Drips Wave](https://www.drips.network/wave) program for Stellar. Issues in a Wave carry the `Stellar Wave` label and earn points when the pull request is merged.
-
-- Apply for the issue in the Drips app and comment on the GitHub issue. You are only assigned once a maintainer confirms it.
-- Finish within the Wave (7 days). If you cannot, say so on the issue so someone else can take it.
+- If you can no longer work on an issue, say so on it so someone else can take it.
 - Pull requests that are untested, copied from an AI tool without understanding, or outside the issue's scope will not be merged.
 
 ## Making changes
