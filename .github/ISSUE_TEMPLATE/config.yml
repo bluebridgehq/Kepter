@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question
+    url: https://github.com/bluebridgehq/kepter/discussions
+    about: Questions about using or building on Kepter go to Discussions.
+  - name: Report a security problem
+    url: https://github.com/bluebridgehq/kepter/security/advisories/new
+    about: Never in public. Report privately so it can be fixed first.
+  - name: Try the live demo
+    url: https://kepter.vercel.app
+    about: Kepter on Stellar testnet.

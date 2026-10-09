@@ -1,0 +1,41 @@
+name: Feature or improvement
+description: Suggest something new or better for Kepter
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: Tell us the problem first. A clear problem helps us find the best fix, even if it is not the one you had in mind.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Who has this problem (buyer, recipient, shop, developer) and when?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would you like to happen?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Which part would change?
+      multiple: true
+      options:
+        - Contract
+        - SDK
+        - Website
+        - Scripts or CI
+        - Docs
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Anything else you considered?
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Would you like to work on it?
+      options:
+        - label: I would like to build this myself once it is agreed
