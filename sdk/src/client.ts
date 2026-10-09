@@ -1,6 +1,17 @@
 import { Buffer } from "buffer";
-import { Address, Asset, Keypair, nativeToScVal, rpc, scValToNative, xdr } from "@stellar/stellar-sdk";
-import type { AssembledTransaction, ClientOptions } from "@stellar/stellar-sdk/contract";
+import {
+  Address,
+  Asset,
+  BASE_FEE,
+  Keypair,
+  Operation,
+  TransactionBuilder,
+  nativeToScVal,
+  rpc,
+  scValToNative,
+  xdr,
+} from "@stellar/stellar-sdk";
+import type { AssembledTransaction, SignTransaction } from "@stellar/stellar-sdk/contract";
 
 import {
   Client as ContractClient,
@@ -19,7 +30,12 @@ export interface KepterOptions {
   rpcUrl?: string;
   /** The connected account. Needed only to build transactions. */
   publicKey?: string;
-  signTransaction?: ClientOptions["signTransaction"];
+  signTransaction?: SignTransaction;
+}
+
+/** The part of a transaction a wallet flow needs: sign, send, and hear when it was submitted. */
+export interface SendableTransaction<T> {
+  signAndSend(options?: { watcher?: { onSubmitted?: () => void } }): Promise<{ result: T }>;
 }
 
 /** Shop details people see when browsing and buying. */
@@ -70,11 +86,15 @@ export class Kepter {
   readonly network: Network;
   readonly server: rpc.Server;
   readonly contract: ContractClient;
+  private readonly publicKey?: string;
+  private readonly signTransaction?: SignTransaction;
 
   constructor(options: KepterOptions = {}) {
     this.network = options.network ?? TESTNET;
     const rpcUrl = options.rpcUrl ?? this.network.rpcUrl;
     this.server = new rpc.Server(rpcUrl);
+    this.publicKey = options.publicKey;
+    this.signTransaction = options.signTransaction;
     this.contract = new ContractClient({
       contractId: this.network.contractId,
       networkPassphrase: this.network.networkPassphrase,
@@ -253,6 +273,39 @@ export class Kepter {
 
   claimOwed(cardId: bigint, account: string) {
     return this.contract.claim_owed({ card_id: cardId, account }, WRITE);
+  }
+
+  /**
+   * Adds the network's USDC asset to the connected account (a trustline), so it can hold
+   * and receive USDC. Sets aside 0.5 XLM in the account. A plain Stellar transaction, not a
+   * contract call.
+   */
+  addUsdc(): SendableTransaction<true> {
+    const { publicKey, signTransaction, server } = this;
+    const { networkPassphrase, usdcAsset } = this.network;
+    if (!publicKey || !signTransaction) throw new Error("Connect a wallet first");
+    const [code, issuer] = usdcAsset.split(":");
+    return {
+      async signAndSend({ watcher } = {}) {
+        const account = await server.getAccount(publicKey);
+        const tx = new TransactionBuilder(account, { fee: BASE_FEE, networkPassphrase })
+          .addOperation(Operation.changeTrust({ asset: new Asset(code, issuer) }))
+          .setTimeout(300)
+          .build();
+        const { signedTxXdr, error } = await signTransaction(tx.toXDR(), { networkPassphrase, address: publicKey });
+        if (error) throw new Error(error.message);
+        const sent = await server.sendTransaction(TransactionBuilder.fromXDR(signedTxXdr, networkPassphrase));
+        if (sent.status !== "PENDING" && sent.status !== "DUPLICATE") {
+          throw new Error(`The network did not accept the transaction (${sent.status})`);
+        }
+        watcher?.onSubmitted?.();
+        const done = await server.pollTransaction(sent.hash, { attempts: 30 });
+        if (done.status !== rpc.Api.GetTransactionStatus.SUCCESS) {
+          throw new Error(`Adding USDC failed (${done.status})`);
+        }
+        return { result: true };
+      },
+    };
   }
 
   /** Reads persistent entries in batches. Missing entries come back as undefined. */

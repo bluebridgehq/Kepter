@@ -62,6 +62,8 @@ const chipInLink = buildChipInLink("https://your.site", cardId);
 
 `signTransaction` comes from the wallet, for example Stellar Wallets Kit.
 
+A buyer's wallet must be able to hold USDC first. `kepter.addUsdc()` returns a transaction that adds the USDC asset (a trustline) to the connected account. It sets aside 0.5 XLM.
+
 ### Spend a card
 
 On the recipient's phone:

@@ -7,6 +7,7 @@ export type {
   FunderInfo,
   KepterOptions,
   Merchant,
+  SendableTransaction,
   Settlement,
   ShopDetails,
   ShopEntry,
