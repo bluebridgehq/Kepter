@@ -13,10 +13,11 @@ import {
 } from "@kepter/sdk";
 
 import { GiftCard } from "../components/GiftCard.tsx";
+import { NoUsdcNote } from "../components/NoUsdcNote.tsx";
 import { BackingSheet, RuleSheet } from "../components/InfoSheets.tsx";
 import { BackingBadge, Button, Chips, MessagePanel, QrImage, Skeleton, SuccessCheck } from "../components/ui.tsx";
 import { backingText } from "../lib/backing.ts";
-import { SITE_URL, USDC_FAUCET_URL, displayUrl, reader } from "../lib/config.ts";
+import { SITE_URL, displayUrl, reader } from "../lib/config.ts";
 import { dateLong, dateWithYear, dollars, money, nowSeconds, shortAddress } from "../lib/format.ts";
 import { lowerFirst, ruleCopy } from "../lib/rules.ts";
 import { copyText, downloadFile, shareLink, whatsappUrl } from "../lib/share.ts";
@@ -54,6 +55,7 @@ export function Buy() {
   const [merchant, setMerchant] = useState<Merchant | null>();
   const [backing, setBacking] = useState<Backing>();
   const [balances, setBalances] = useState<Balances>();
+  const [balancesVersion, setBalancesVersion] = useState(0);
   const [sheet, setSheet] = useState<"backing" | "rule" | null>(null);
 
   const [preset, setPreset] = useState<number | null>(20);
@@ -81,7 +83,7 @@ export function Buy() {
   useEffect(() => {
     if (!address) return setBalances(undefined);
     reader.getBalances(address).then(setBalances, () => setBalances(undefined));
-  }, [address, bought]);
+  }, [address, bought, balancesVersion]);
 
   if (merchant === undefined) {
     return (
@@ -465,16 +467,7 @@ export function Buy() {
                 <span className="font-extrabold text-ok">✓</span>If the shop closes, you get your money back.
               </span>
             </div>
-            {noUsdc && balances && (
-              <div className="max-w-[440px] rounded-[14px] bg-bad-bg px-4 py-3.5 text-[15px] text-bad">
-                <strong>Your wallet has {money(balances.usdc ?? 0n).slice(1)} USDC.</strong> On the test network you can
-                get free test USDC from{" "}
-                <a href={USDC_FAUCET_URL} target="_blank" rel="noreferrer" className="font-extrabold text-bad">
-                  Circle's faucet
-                </a>
-                .
-              </div>
-            )}
+            {noUsdc && balances && <NoUsdcNote balances={balances} onAdded={() => setBalancesVersion((v) => v + 1)} className="max-w-[440px]" />}
             <Button
               variant="accent"
               disabled={payDisabled}

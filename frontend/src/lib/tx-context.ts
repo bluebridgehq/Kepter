@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { AssembledTransaction } from "@kepter/sdk";
+import type { SendableTransaction } from "@kepter/sdk";
 
 export interface TxRequest<T> {
   /** Shown at the top of the progress sheet, for example "Gift card at Tola's Kitchen". */
@@ -7,7 +7,7 @@ export interface TxRequest<T> {
   /** Shown large under the title, for example "$20.00 USDC". */
   amount: string;
   /** Builds and simulates the transaction. Called again on retry. */
-  build: () => Promise<AssembledTransaction<T>>;
+  build: () => Promise<SendableTransaction<T>>;
 }
 
 export interface TxApi {

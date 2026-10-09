@@ -3,9 +3,10 @@ import { useParams } from "react-router-dom";
 import { buildChipInLink, type Balances, type Card, type Merchant } from "@kepter/sdk";
 
 import { GiftCard } from "../components/GiftCard.tsx";
+import { NoUsdcNote } from "../components/NoUsdcNote.tsx";
 import { RuleSheet } from "../components/InfoSheets.tsx";
 import { Button, Chips, Skeleton } from "../components/ui.tsx";
-import { SITE_URL, USDC_FAUCET_URL, reader } from "../lib/config.ts";
+import { SITE_URL, reader } from "../lib/config.ts";
 import { daysLeftText, dollars, money, nowSeconds } from "../lib/format.ts";
 import { ruleCopy } from "../lib/rules.ts";
 import { shareLink } from "../lib/share.ts";
@@ -35,6 +36,7 @@ export function ChipIn() {
 
   const [data, setData] = useState<Loaded | null>();
   const [balances, setBalances] = useState<Balances>();
+  const [balancesVersion, setBalancesVersion] = useState(0);
   const [pick, setPick] = useState(10);
   const [added, setAdded] = useState<bigint>();
   const [ruleOpen, setRuleOpen] = useState(false);
@@ -58,7 +60,7 @@ export function ChipIn() {
   useEffect(() => {
     if (!address) return setBalances(undefined);
     reader.getBalances(address).then(setBalances, () => setBalances(undefined));
-  }, [address, added]);
+  }, [address, added, balancesVersion]);
 
   if (data === undefined) {
     return (
@@ -176,16 +178,7 @@ export function ChipIn() {
           />
           {tooMuch && <span className="text-sm text-bad">A card can hold at most 1,000 USDC.</span>}
           <span className="text-sm text-ink-2">If the shop closes, you get your money back.</span>
-          {noUsdc && balances && (
-            <div className="rounded-[14px] bg-bad-bg px-4 py-3.5 text-[15px] text-bad">
-              <strong>Your wallet has {money(balances.usdc ?? 0n).slice(1)} USDC.</strong> On the test network you can
-              get free test USDC from{" "}
-              <a href={USDC_FAUCET_URL} target="_blank" rel="noreferrer" className="font-extrabold text-bad">
-                Circle's faucet
-              </a>
-              .
-            </div>
-          )}
+          {noUsdc && balances && <NoUsdcNote balances={balances} onAdded={() => setBalancesVersion((v) => v + 1)} />}
           <Button
             variant="accent"
             disabled={!!address && (tooMuch || noUsdc)}
