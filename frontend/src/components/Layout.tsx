@@ -78,6 +78,7 @@ export function Layout() {
         className="mx-auto flex w-full max-w-[1160px] flex-wrap items-center justify-between gap-x-5 gap-y-3 border-t border-line px-5 pt-6 pb-8 text-sm text-ink-2"
       >
         <div className="flex gap-[18px]">
+          <Link to="/gifts">Your gifts</Link>
           <a href={`${GITHUB_URL}#readme`} target="_blank" rel="noreferrer">
             About
           </a>

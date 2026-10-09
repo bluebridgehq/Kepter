@@ -12,6 +12,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard.tsx").then((m) => ({ defa
 const Scan = lazy(() => import("./pages/Scan.tsx").then((m) => ({ default: m.Scan })));
 const Poster = lazy(() => import("./pages/Poster.tsx").then((m) => ({ default: m.Poster })));
 const Shops = lazy(() => import("./pages/Shops.tsx").then((m) => ({ default: m.Shops })));
+const Gifts = lazy(() => import("./pages/Gifts.tsx").then((m) => ({ default: m.Gifts })));
 const Buy = lazy(() => import("./pages/Buy.tsx").then((m) => ({ default: m.Buy })));
 const ChipIn = lazy(() => import("./pages/ChipIn.tsx").then((m) => ({ default: m.ChipIn })));
 const GiftCardPage = lazy(() => import("./pages/GiftCardPage.tsx").then((m) => ({ default: m.GiftCardPage })));
@@ -31,6 +32,7 @@ export function App() {
                 <Route path="shop/scan" element={<Scan />} />
                 <Route path="shop/poster" element={<Poster />} />
                 <Route path="shops" element={<Shops />} />
+                <Route path="gifts" element={<Gifts />} />
                 <Route path="s/:shop" element={<Buy />} />
                 <Route path="g/:cardId" element={<ChipIn />} />
                 <Route path="c/:cardId" element={<GiftCardPage />} />

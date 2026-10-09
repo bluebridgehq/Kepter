@@ -21,7 +21,7 @@ import { SITE_URL, displayUrl, reader } from "../lib/config.ts";
 import { dateLong, dateWithYear, dollars, money, nowSeconds, shortAddress } from "../lib/format.ts";
 import { lowerFirst, ruleCopy } from "../lib/rules.ts";
 import { copyText, downloadFile, shareLink, whatsappUrl } from "../lib/share.ts";
-import { saveBoughtCard } from "../lib/storage.ts";
+import { saveGift } from "../lib/storage.ts";
 import { useToast } from "../lib/toast-context.ts";
 import { useTx } from "../lib/tx-context.ts";
 import { useWallet } from "../lib/wallet-context.ts";
@@ -170,7 +170,8 @@ export function Buy() {
       message: message.trim() || undefined,
     });
     const chipLink = buildChipInLink(SITE_URL, cardId);
-    saveBoughtCard({
+    saveGift({
+      kind: "bought",
       cardId: cardId.toString(),
       link,
       shop: merchant.name,
@@ -292,6 +293,13 @@ export function Buy() {
               Download a backup
             </a>
           </div>
+          <Button
+            variant="secondary"
+            onClick={() => navigate("/gifts")}
+            className="min-h-[52px] rounded-[14px] text-base"
+          >
+            See all your gifts
+          </Button>
           <Button
             variant="ghost"
             onClick={() => {

@@ -51,6 +51,15 @@ export function WalletButton() {
           <button
             onClick={() => {
               setOpen(false);
+              navigate("/gifts");
+            }}
+            className="cursor-pointer rounded-[10px] border-none bg-transparent p-3 text-left text-[15px] text-ink hover:bg-surface-2"
+          >
+            Your gifts
+          </button>
+          <button
+            onClick={() => {
+              setOpen(false);
               navigate("/shop");
             }}
             className="cursor-pointer rounded-[10px] border-none bg-transparent p-3 text-left text-[15px] text-ink hover:bg-surface-2"

@@ -40,6 +40,7 @@ The site follows the device setting until someone taps the sun or moon button in
 |---|---|---|
 | `/` | Home | Everyone |
 | `/shops` | Find a shop by category, name or city | Buyer |
+| `/gifts` | Gifts bought or chipped in to on this device: what is left, share again, settle, claim | Buyer and friends |
 | `/open` | Open a shop, in 3 steps | Shop owner |
 | `/shop` | Dashboard: cards waiting to be spent, ready to settle, history, store credit, rule, shop details, close | Shop owner |
 | `/shop/scan` | Scan a customer's code at the counter, or paste one from an online order | Shop owner |
