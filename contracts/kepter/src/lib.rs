@@ -432,13 +432,13 @@ fn check_details(
     city: &String,
     contact: &String,
 ) -> Result<(), Error> {
-    if name.is_empty() || name.len() > MAX_NAME_LEN {
+    if name.len() > MAX_NAME_LEN || is_blank(name) {
         return Err(Error::InvalidName);
     }
     if category >= MAX_CATEGORIES {
         return Err(Error::InvalidCategory);
     }
-    if city.is_empty() || city.len() > MAX_CITY_LEN {
+    if city.len() > MAX_CITY_LEN || is_blank(city) {
         return Err(Error::InvalidCity);
     }
     if contact.len() > MAX_CONTACT_LEN {
@@ -473,4 +473,22 @@ fn add(a: i128, b: i128) -> Result<i128, Error> {
 
 fn sub(a: i128, b: i128) -> Result<i128, Error> {
     a.checked_sub(b).ok_or(Error::Overflow)
+}
+
+fn is_blank(s: &String) -> bool {
+    let len = s.len() as usize;
+    if len == 0 {
+        return true;
+    }
+
+    if len > MAX_NAME_LEN as usize {
+        return false;
+    }
+
+    let mut buf = [0u8; MAX_NAME_LEN as usize];
+    s.copy_into_slice(&mut buf[..len]);
+
+    buf[..len]
+        .iter()
+        .all(|&b| b == b' ' || b == b'\t' || b == b'\n')
 }
