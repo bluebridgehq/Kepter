@@ -11,6 +11,7 @@ import { daysLeftText, dollars, money, nowSeconds } from "../lib/format.ts";
 import { ruleCopy } from "../lib/rules.ts";
 import { shareLink } from "../lib/share.ts";
 import { cardStatus } from "../lib/status.ts";
+import { saveGift } from "../lib/storage.ts";
 import { useToast } from "../lib/toast-context.ts";
 import { useTx } from "../lib/tx-context.ts";
 import { useWallet } from "../lib/wallet-context.ts";
@@ -142,7 +143,16 @@ export function ChipIn() {
       amount: `${money(amount)} USDC`,
       build: () => writer.topUp(address, cardId, amount),
     });
-    if (done !== undefined) setAdded(amount);
+    if (done === undefined) return;
+    setAdded(amount);
+    saveGift({
+      kind: "chipin",
+      cardId: cardId.toString(),
+      link,
+      shop: data?.merchant.name ?? "",
+      amount: amount.toString(),
+      savedAt: Date.now(),
+    });
   };
 
   return (

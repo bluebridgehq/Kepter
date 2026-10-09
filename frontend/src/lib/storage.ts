@@ -18,18 +18,30 @@ export function save(key: string, value: unknown): void {
 
 export interface SavedCard {
   cardId: string;
+  /** The card link with its secret for a bought card, or the chip in link. */
   link: string;
   shop: string;
+  /** What this device paid in, in base units. */
   amount: string;
   savedAt: number;
+  /** Missing on cards saved before chip ins were saved too. */
+  kind?: "bought" | "chipin";
 }
 
 const SAVED_CARDS = "kepter:cards";
 
-/** Card links bought on this device, so a buyer can find them again. */
-export function saveBoughtCard(card: SavedCard): void {
-  const cards = load<SavedCard[]>(SAVED_CARDS, []).filter((c) => c.cardId !== card.cardId);
-  save(SAVED_CARDS, [card, ...cards].slice(0, 50));
+export function savedCards(): SavedCard[] {
+  return load<SavedCard[]>(SAVED_CARDS, []);
+}
+
+/** Gifts bought or chipped in to on this device, so the buyer can find them again. */
+export function saveGift(card: SavedCard): void {
+  const kind = card.kind ?? "bought";
+  const cards = savedCards();
+  const same = (c: SavedCard) => c.cardId === card.cardId && (c.kind ?? "bought") === kind;
+  const previous = cards.find(same);
+  const amount = kind === "chipin" && previous ? BigInt(previous.amount) + BigInt(card.amount) : BigInt(card.amount);
+  save(SAVED_CARDS, [{ ...card, kind, amount: amount.toString() }, ...cards.filter((c) => !same(c))].slice(0, 100));
 }
 
 export function giftOpened(cardId: string): boolean {
