@@ -2,6 +2,8 @@
 
 The Kepter website: the home page, the shop list, opening a shop, the shop dashboard, the counter scanner, the poster, buying a card, chipping in, and the gift card the recipient opens.
 
+Live on testnet at [kepter.vercel.app](https://kepter.vercel.app).
+
 Built with Vite, React 19, TypeScript, Tailwind CSS v4 and React Router. It talks to Stellar only through [`@kepter/sdk`](../sdk) and has no backend.
 
 ## Run it
@@ -71,6 +73,8 @@ pnpm --filter @kepter/frontend build
 ```
 
 ## Hosting
+
+The live site is on Vercel, deployed from `main` on every push, with `VITE_SITE_URL=https://kepter.vercel.app`.
 
 It builds to a static site in `dist/`. Every route must serve `index.html`.
 

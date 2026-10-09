@@ -4,6 +4,8 @@
 
 Kepter lets small shops sell gift cards and store credit that are backed by real money. When someone buys a card, the USDC is held by this Soroban contract on Stellar, not by the shop. Buyers find shops by category and city. The person who gets the card opens a link on their phone and shows a QR code at the counter, or sends a payment code to the shop with an online order. The shop is paid from the card on the spot.
 
+**Try it: [kepter.vercel.app](https://kepter.vercel.app)** (Stellar testnet, no real money)
+
 This repository holds the whole project: the Soroban contract (live on testnet), the TypeScript SDK and the website.
 
 ## How it works
@@ -24,6 +26,7 @@ The full design is in [docs/DESIGN.md](docs/DESIGN.md), and the product overview
 
 | | |
 |---|---|
+| Live demo | [kepter.vercel.app](https://kepter.vercel.app) |
 | Network | Stellar testnet (Protocol 29) |
 | Contract | [`CBOASWBXLWLNVMX65JGXITSO56WUHC6HXBFCVF2JTXVOYMIGY2LWNYU7`](https://stellar.expert/explorer/testnet/contract/CBOASWBXLWLNVMX65JGXITSO56WUHC6HXBFCVF2JTXVOYMIGY2LWNYU7) |
 | Asset | Circle's testnet USDC (`CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA`) |
