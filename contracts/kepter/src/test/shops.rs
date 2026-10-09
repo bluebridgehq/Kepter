@@ -115,6 +115,14 @@ fn shop_name_must_be_present_and_short() {
         Err(Error::InvalidName)
     );
     assert_eq!(
+        try_open(&s, &other, "   ", SHARED, FOOD, "Ibadan", ""),
+        Err(Error::InvalidName)
+    );
+    assert_eq!(
+        try_open(&s, &other, " \t \n ", SHARED, FOOD, "Ibadan", ""),
+        Err(Error::InvalidName)
+    );
+    assert_eq!(
         try_open(&s, &other, long, SHARED, FOOD, "Ibadan", ""),
         Err(Error::InvalidName)
     );
@@ -141,6 +149,14 @@ fn city_must_be_present_and_short() {
     let long = "A city name that is much too long to fit on a shop page";
     assert_eq!(
         try_open(&s, &other, "Shop", SHARED, FOOD, "", ""),
+        Err(Error::InvalidCity)
+    );
+    assert_eq!(
+        try_open(&s, &other, "Shop", SHARED, FOOD, "   ", ""),
+        Err(Error::InvalidCity)
+    );
+    assert_eq!(
+        try_open(&s, &other, "Shop", SHARED, FOOD, "\t\t", ""),
         Err(Error::InvalidCity)
     );
     assert_eq!(
@@ -192,11 +208,23 @@ fn changing_details_checks_them() {
         Err(Error::InvalidName)
     );
     assert_eq!(
+        try_update(&s, "   ", FOOD, "Ibadan", ""),
+        Err(Error::InvalidName)
+    );
+    assert_eq!(
         try_update(&s, "Shop", 40, "Ibadan", ""),
         Err(Error::InvalidCategory)
     );
     assert_eq!(
         try_update(&s, "Shop", FOOD, "", ""),
+        Err(Error::InvalidCity)
+    );
+    assert_eq!(
+        try_update(&s, "Shop", FOOD, "   ", ""),
+        Err(Error::InvalidCity)
+    );
+    assert_eq!(
+        try_update(&s, "Shop", FOOD, "\t\t", ""),
         Err(Error::InvalidCity)
     );
 }
