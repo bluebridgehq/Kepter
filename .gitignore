@@ -1,7 +1,26 @@
+# Build output
 target/
-test_snapshots/
-.env
-.DS_Store
-node_modules/
 dist/
-.env.local
+test_snapshots/
+coverage/
+*.tsbuildinfo
+
+# Dependencies
+node_modules/
+
+# Secrets and local settings
+.env
+.env.*
+!.env.example
+*.pem
+*.secret
+.vercel/
+
+# Editors and OS
+.DS_Store
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
