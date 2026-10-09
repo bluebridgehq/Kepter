@@ -1,6 +1,6 @@
 # Contributing to Kepter
 
-Thanks for helping. This guide covers setup, how to pick up work, and what a good pull request looks like.
+Thanks for helping. This guide covers setup, how to pick up work, and what a good pull request looks like. By taking part you agree to our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## Setup
 
@@ -21,9 +21,18 @@ Read [docs/DESIGN.md](docs/DESIGN.md) before changing contract logic. It explain
 
 ## Picking an issue
 
-- Look for open issues with acceptance criteria and a suggested complexity.
-- Comment on the issue before you start so two people do not do the same work.
+- Start with the [good first issues](https://github.com/bluebridgehq/kepter/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22), or filter by area with the `contracts`, `sdk`, `frontend`, `scripts` and `ci` labels.
+- Every issue has a description, the files involved, acceptance criteria and a size (`complexity: trivial`, `medium` or `high`).
+- Comment on the issue to ask for it, and **wait to be assigned** before you start. This stops two people doing the same work.
 - If something is unclear, ask on the issue. Small questions early save big rewrites later.
+
+### Drips Wave
+
+Kepter takes part in the [Drips Wave](https://www.drips.network/wave) program for Stellar. Issues in a Wave carry the `Stellar Wave` label and earn points when the pull request is merged.
+
+- Apply for the issue in the Drips app and comment on the GitHub issue. You are only assigned once a maintainer confirms it.
+- Finish within the Wave (7 days). If you cannot, say so on the issue so someone else can take it.
+- Pull requests that are untested, copied from an AI tool without understanding, or outside the issue's scope will not be merged.
 
 ## Making changes
 
@@ -59,4 +68,4 @@ CI runs the same checks. Link the issue in the description with `Closes #<number
 
 ## Security
 
-If you find a way to take or lock money that should not be possible, please do not open a public issue. Contact the maintainers privately through GitHub first.
+If you find a way to take or lock money that should not be possible, do not open a public issue. Follow [SECURITY.md](SECURITY.md) to report it privately.
