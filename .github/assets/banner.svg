@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 340" width="1200" height="340">
+  <defs>
+    <style>
+      text { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
+    </style>
+    <pattern id="dots" width="14" height="14" patternUnits="userSpaceOnUse">
+      <circle cx="1" cy="1" r="1" fill="#FFFFFF" fill-opacity="0.10"/>
+    </pattern>
+    <clipPath id="card">
+      <rect width="420" height="265" rx="24"/>
+    </clipPath>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="160%">
+      <feDropShadow dx="0" dy="18" stdDeviation="16" flood-color="#0A281E" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="340" fill="#FBF7F1"/>
+  <rect width="1200" height="8" fill="#F2A33A"/>
+  <rect y="332" width="1200" height="8" fill="#0F4C3A"/>
+
+  <!-- Logo and name -->
+  <g transform="translate(70 78) scale(2.1)">
+    <path d="M4 9.5A3.5 3.5 0 0 1 7.5 6h11.3a3.5 3.5 0 0 1 2.47 1.03l6.2 6.2a3.5 3.5 0 0 1 0 4.95l-8.3 8.3a3.5 3.5 0 0 1-4.95 0l-9.2-9.2A3.5 3.5 0 0 1 4 14.8V9.5Z" fill="#0F4C3A"/>
+    <circle cx="11" cy="12.5" r="2.4" fill="#F2A33A"/>
+  </g>
+  <text x="142" y="128" font-size="58" font-weight="800" fill="#14211D" letter-spacing="-1.5">Kepter</text>
+
+  <!-- Tagline -->
+  <text x="72" y="196" font-size="36" font-weight="800" fill="#14211D" letter-spacing="-0.8">Send what they need,</text>
+  <text x="72" y="238" font-size="36" font-weight="800" fill="#14211D" letter-spacing="-0.8">not just money.</text>
+  <text x="72" y="276" font-size="19" fill="#4B5853">Gift cards for the shops people already use, backed by USDC on Stellar.</text>
+
+  <!-- Gift card -->
+  <g transform="translate(720 44) rotate(-5 210 132)" filter="url(#shadow)">
+    <g clip-path="url(#card)">
+      <rect width="420" height="265" fill="#0F4C3A"/>
+      <rect width="420" height="265" fill="url(#dots)"/>
+      <circle cx="390" cy="-10" r="150" fill="none" stroke="#FFFFFF" stroke-opacity="0.10" stroke-width="1.5"/>
+      <circle cx="380" cy="20" r="105" fill="none" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="1.5"/>
+      <rect x="319" width="29" height="265" fill="#F2A33A"/>
+      <rect x="314" width="5" height="265" fill="#FFFFFF" fill-opacity="0.18"/>
+    </g>
+    <text x="30" y="50" font-size="14" font-weight="600" fill="#FFFFFF" fill-opacity="0.72" letter-spacing="2.2">GIFT CARD</text>
+    <text x="30" y="82" font-size="27" font-weight="700" fill="#FFFFFF">Tola's Kitchen</text>
+    <text x="30" y="160" font-size="14" font-weight="500" fill="#FFFFFF" fill-opacity="0.75">Balance</text>
+    <text x="28" y="212" font-size="54" font-weight="700" fill="#FFFFFF" letter-spacing="-1">$40.00</text>
+    <text x="30" y="243" font-size="15" font-weight="500" fill="#FFFFFF" fill-opacity="0.82">For Bisi</text>
+    <text x="118" y="243" font-size="15" font-weight="500" fill="#FFFFFF" fill-opacity="0.82">From Ade</text>
+  </g>
+</svg>
